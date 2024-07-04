@@ -1,0 +1,47 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Sample API",
+    "description": "API hosted at localhost",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/api/v0"
+    }
+  ],
+  "paths": {
+    "/random/": {
+      "get": {
+        "summary": "Random API (use http://localhost:8080/api/v0/random to test)",
+        "responses": {
+          "200": {
+            "description": "A random response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "job": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer",
+                          "description": "Job ID"
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "Job name"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
