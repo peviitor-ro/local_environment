@@ -13,6 +13,7 @@ rem Stop and remove existing docker containers
 docker ps -a --format "{{.Names}}" | findstr /C:"apache-container">nul 2>&1 && (docker stop apache-container && docker rm apache-container)
 docker ps -a --format "{{.Names}}" | findstr /C:"solr-container">nul 2>&1 && (docker stop solr-container && docker rm solr-container)
 docker ps -a --format "{{.Names}}" | findstr /C:"data-migration">nul 2>&1 && (docker stop data-migration && docker rm data-migration)
+docker ps -a --format "{{.Names}}" | findstr /C:"swagger-ui">nul 2>&1 && (docker stop swagger-ui && docker rm swagger-ui)
 
 rem Create Docker Network if not existing 
 docker network ls --format "{{.Name}}" | findstr /C:"mynetwork">nul 2>&1 || (docker network create --subnet=172.18.0.0/16 mynetwork) 
@@ -36,6 +37,8 @@ IF ERRORLEVEL 1 (echo Solr server not ready, waiting for 30 seconds before retry
 rem Run data-migration and removing Docker Image
 docker run --name data-migration --network mynetwork --ip 172.18.0.12 --rm sebiboga/peviitor-data-migration-local:latest
 docker rmi sebiboga/peviitor-data-migration-local:latest
+
+docker run --name swagger-ui -p 8081:8080 sebiboga/swagger-ui:1.0.2
 rem Starting Google Chrome with specific urls
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/api/v0/random"
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8983/solr/#/jobs/query"
