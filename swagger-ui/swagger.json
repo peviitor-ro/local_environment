@@ -70,11 +70,11 @@
           "description": "Company data",
           "required": true,
           "content": {
-            "application/json": {
+            "application/x-www-form-urlencoded": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "hiringOrganization.name": {
+                  "company": {
                     "type": "string",
                     "description": "Company Name"
                   }
@@ -110,7 +110,7 @@
                       "type": "string"
                     },
                     "code": {
-                          "type": "integer"
+                      "type": "integer"
                     }
                   }
                 }
