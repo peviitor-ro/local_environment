@@ -13,6 +13,7 @@
   "paths": {
     "/random/": {
       "get": {
+        "tags": ["General"],
         "summary": "Random API (use http://localhost:8080/api/v0/random to test)",
         "responses": {
           "200": {
@@ -34,6 +35,82 @@
                           "description": "Job name"
                         }
                       }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clean/": {
+      "post": {
+        "tags": ["General"],
+        "summary": "Delete jobs for company (use http://localhost:8080/api/v0/clean plus body content to test)",
+        "requestBody": {
+          "description": "Company data",
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "hiringOrganization.name": {
+                    "type": "string",
+                    "description": "Company Name"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully deleted the jobs for company",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
+                          "type": "integer"
                     }
                   }
                 }
