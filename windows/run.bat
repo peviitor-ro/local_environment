@@ -42,6 +42,7 @@ docker run --name swagger-ui -p 8081:8080 sebiboga/swagger-ui:1.0.2
 rem Starting Google Chrome with specific urls
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/api/v0/random"
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8983/solr/#/jobs/query"
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8081"
 ENDLOCAL
 echo The execution of this script is now completed.
 pause
