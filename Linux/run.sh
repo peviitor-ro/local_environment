@@ -36,11 +36,11 @@ docker run --name deploy_fe --network mynetwork --ip 172.18.0.13 --rm \
     -v /home/peviitor/:/app/build sebiboga/fe:latest npm run build:local
 sudo rm -f /home/peviitor/.htaccess
 
-git clone https://github.com/peviitor-ro/api.git /home/peviitor/
+git clone https://github.com/peviitor-ro/api.git /home/peviitor/api
 docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 8080:80 \
     -v /home/peviitor/:/var/www/html sebiboga/php-apache:1.0.0
 
-git clone https://github.com/peviitor-ro/solr.git /home/peviitor/
+git clone https://github.com/peviitor-ro/solr.git /home/peviitor/solr
 sudo chmod -R 777 /home/$USERNAME/peviitor
 docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 \
     -v /home/peviitor/solr/core/data:/var/solr/data sebiboga/peviitor:1.0.0
