@@ -110,6 +110,71 @@
                       "type": "string"
                     },
                     "code": {
+                        "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/companies/": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Determines whether to return the number of jobs for each company"
+          } 
+        ],
+        "tags": ["General"],
+        "summary": "Get the list of companies (use http://localhost:8080/api/v0/companies/?count=true to test)",
+        "responses": {
+          "200": {
+            "description": "Successfully received the list of companies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "companies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "jobs": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "code": {
                       "type": "integer"
                     }
                   }
