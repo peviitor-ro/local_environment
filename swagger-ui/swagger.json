@@ -1,9 +1,9 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "Sample API",
-    "description": "API hosted at localhost",
-    "version": "1.0.0"
+    "title": "API for LOCAL ENV of peviitor.ro",
+    "description": "API documentation",
+    "version": "1.0"
   },
   "servers": [
     {
@@ -14,44 +14,16 @@
     "/random/": {
       "get": {
         "tags": ["General"],
-        "summary": "Random API (use http://localhost:8080/api/v0/random to test)",
+        "summary": "Get random data",
         "responses": {
           "200": {
-            "description": "A random response",
+            "description": "A random job",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
                     "job": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "integer",
-                          "description": "Job ID"
-                        },
-                        "name": {
-                          "type": "string",
-                          "description": "Job name"
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    },
-                    "code": {
                       "type": "integer"
                     }
                   }
@@ -65,9 +37,9 @@
     "/clean/": {
       "post": {
         "tags": ["General"],
-        "summary": "Delete jobs for company (use http://localhost:8080/api/v0/clean plus body content to test)",
+        "summary": "Delete jobs for a company",
         "requestBody": {
-          "description": "Company data",
+          "description": "Company name",
           "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
@@ -75,8 +47,7 @@
                 "type": "object",
                 "properties": {
                   "company": {
-                    "type": "string",
-                    "description": "Company Name"
+                    "type": "string"
                   }
                 }
               }
@@ -85,7 +56,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successfully deleted the jobs for company",
+            "description": "Deleted jobs successfully",
             "content": {
               "application/json": {
                 "schema": {
@@ -98,19 +69,37 @@
                 }
               }
             }
-          },
-          "503": {
-            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
+          }
+        }
+      }
+    },
+    "/companies/": {
+      "get": {
+        "tags": ["General"],
+        "summary": "Get list of companies",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "count",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Whether to count the number of jobs for each company"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully received the list of companies",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "error": {
-                      "type": "string"
+                    "companies": {
+                      "type": "array"
                     },
-                    "code": {
-                        "type": "integer"
+                    "total": {
+                      "type": "integer"
                     }
                   }
                 }
@@ -120,52 +109,38 @@
         }
       }
     },
-    "/companies/": {
+    "/getuser/": {
       "get": {
+        "tags": ["User"],
+        "summary": "Get a user by ID",
         "parameters": [
           {
+            "name": "user",
             "in": "query",
-            "name": "count",
+            "required": true,
+            "description": "The ID of the user",
             "schema": {
-              "type": "boolean"
-            },
-            "description": "Determines whether to return the number of jobs for each company"
-          } 
+              "type": "string"
+            }
+          }
         ],
-        "tags": ["General"],
-        "summary": "Get the list of companies (use http://localhost:8080/api/v0/companies/?count=true to test)",
         "responses": {
           "200": {
-            "description": "Successfully received the list of companies",
+            "description": "Successfully retrieved the user",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "total": {
-                      "type": "integer"
-                    },
-                    "companies": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "name": {
-                            "type": "string"
-                          },
-                          "jobs": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    }
-                  }
+                  "type": "object"
                 }
               }
             }
           },
+          "404": {
+            "description": "No user found",
+            "content": {}
+          },
           "503": {
-            "description": "Service Unavailable. SOLR server is down or your call to Solr failed.",
+            "description": "Service Unavailable. SOLR server is down or your call to Solr failed",
             "content": {
               "application/json": {
                 "schema": {
