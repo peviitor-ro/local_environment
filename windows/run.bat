@@ -38,11 +38,9 @@ rem Run data-migration and removing Docker Image
 docker run --name data-migration --network mynetwork --ip 172.18.0.12 --rm sebiboga/peviitor-data-migration-local:latest
 docker rmi sebiboga/peviitor-data-migration-local:latest
 
-docker run --name swagger-ui -p 8081:8080 -d sebiboga/swagger-ui:1.0.2
 rem Starting Google Chrome with specific urls
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/api/v0/random"
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8983/solr/#/jobs/query"
-start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8081"
 ENDLOCAL
 echo The execution of this script is now completed.
 pause
