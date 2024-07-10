@@ -25,8 +25,10 @@ sudo bash run.sh
 ```
 After running the script you can find the peviitor directory here
 ```
-/home/peviitor
+/home/<your-username>/peviitor
 ```
+For ***API*** changes modify inside build/api:
+- ```/home/<your-username>/peviitor/build/api```
 # Test the environment in the browser:
 - http://localhost:8983/
 - http://localhost:8080/api/v0/random/
