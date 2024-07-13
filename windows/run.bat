@@ -27,9 +27,9 @@ PowerShell -Command "git clone 'https://github.com/peviitor-ro/solr.git' 'C:\pev
 PowerShell -Command "git clone 'https://github.com/peviitor-ro/api.git' 'C:\peviitor\api'"
 
 rem Running docker containers
-docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 8080:80 -v C:/peviitor:/var/www/html sebiboga/php-apache:1.0.0
+docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 8080:80 -v C:/peviitor:/var/www/html sebiboga/php-apache:latest
 timeout /T 10
-docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 -v "C:\peviitor\solr\core\data:/var/solr/data" sebiboga/peviitor:1.0.0
+docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 -v "C:\peviitor\solr\core\data:/var/solr/data" sebiboga/peviitor:latest
 :loop
 echo Waiting for solr container to be ready...
 docker exec solr-container nc -w 5 -z localhost 8983>nul 2>&1
