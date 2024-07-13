@@ -41,6 +41,8 @@ docker rmi sebiboga/peviitor-data-migration-local:latest
 rem Starting Google Chrome with specific urls
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/api/v0/random"
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8983/solr/#/jobs/query"
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/swagger-ui"
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/"
 ENDLOCAL
 echo The execution of this script is now completed.
 pause
