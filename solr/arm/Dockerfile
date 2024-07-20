@@ -1,0 +1,2 @@
+FROM arm64v8/solr:9.6.1
+EXPOSE 8983
