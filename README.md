@@ -13,7 +13,7 @@ How to run the script:
 
 After running the script you can find the peviitor directory here: C:\peviitor
 
-How to repopulate SOLR:
+How to ***repopulate SOLR***:
 - Double click on the data-migration.bat script
 
 # Linux script
@@ -37,11 +37,11 @@ For ***FE*** changes modify inside peviitor/search-engine, then rebuild:
 sudo bash rebuild_fe.sh
 ```
 
-How repopulate SOLR:
+How ***repopulate SOLR***:
 ```
 sudo bash data-migration.sh
 ```
-How to delete docker containers and docker imagines that are created for 
+How to ***delete docker containers and docker imagines*** that are created for 
 local_environment:
 ```
 sudo bash delete_containers_images_local_env.sh
