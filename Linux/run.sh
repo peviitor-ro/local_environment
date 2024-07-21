@@ -50,7 +50,7 @@ docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 80
 git clone https://github.com/peviitor-ro/solr.git /home/$username/peviitor/solr
 sudo chmod -R 777 /home/$username/peviitor
 docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 \
-    -v /home/$username/peviitor/solr/core/data:/var/solr/data sebiboga/peviitor:latest
+    -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
 # Wait for solr-container to be ready
 until [ "$(docker inspect -f {{.State.Running}} solr-container)" == "true" ]; do
