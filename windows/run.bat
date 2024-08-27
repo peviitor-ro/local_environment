@@ -35,8 +35,8 @@ echo Waiting for solr container to be ready...
 docker exec solr-container nc -w 5 -z localhost 8983>nul 2>&1
 IF ERRORLEVEL 1 (echo Solr server not ready, waiting for 30 seconds before retry... TIMEOUT /T 30 GOTO loop)
 rem Run data-migration and removing Docker Image
-docker run --name data-migration --network mynetwork --ip 172.18.0.12 --rm sebiboga/peviitor-data-migration-local:latest
-docker rmi sebiboga/peviitor-data-migration-local:latest
+docker run --name solr-curl-container --network mynetwork --ip 172.18.0.14 --rm alexstefan1702/solr-curl-update
+docker rmi alexstefan1702/solr-curl-update 
 
 rem Starting Google Chrome with specific urls
 start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "http://localhost:8080/api/v0/random"

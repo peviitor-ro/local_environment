@@ -56,9 +56,6 @@ docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983
 until [ "$(docker inspect -f {{.State.Running}} solr-container)" == "true" ]; do
     sleep 0.1;
 done;
-
-docker run --name data-migration --network mynetwork --ip 172.18.0.12 --rm sebiboga/peviitor-data-migration-local:latest
-
-docker rmi sebiboga/peviitor-data-migration-local:latest
+docker run --name solr-curl-container --network mynetwork --ip 172.18.0.14 --rm alexstefan1702/solr-curl-update
 
 echo "Script execution completed."
