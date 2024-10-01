@@ -5,6 +5,7 @@ Script to build local environment for peviitor project
 ## Requirements
 - GIT installed
 - Docker installed
+https://docs.docker.com/desktop/install/windows-install/
 
 ## How to run:
 How to run the script:
@@ -20,6 +21,7 @@ How to ***repopulate SOLR***:
 ## Requirements
 - GIT installed
 - Docker installed
+https://docs.docker.com/desktop/install/linux/
 
 ## How to run in terminal:
 Go to the script location.
