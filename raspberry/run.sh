@@ -60,7 +60,8 @@ until [ "$(docker inspect -f {{.State.Running}} solr-container)" == "true" ]; do
     sleep 0.1;
 done;
 
-sleep 5
+sleep 10
+echo "sleep"
 
 bash /home/$username/raspberry/solr-curl.sh
 
