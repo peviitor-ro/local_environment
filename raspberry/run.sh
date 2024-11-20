@@ -60,7 +60,7 @@ until [ "$(docker inspect -f {{.State.Running}} solr-container)" == "true" ]; do
     sleep 0.1;
 done;
 
-sleep 10
+sleep 30
 
 master_server=$(curl -s https://api.peviitor.ro/devops/solr/)
 echo $master_server
