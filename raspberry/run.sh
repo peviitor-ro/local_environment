@@ -42,7 +42,7 @@ docker pull node:18-alpine
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
 docker run --name deploy_fe --network mynetwork --ip 172.18.0.13 --rm \
-    -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
+    -v /home/$username/peviitor/build:/app/build fe:latest npm run build:qa
 rm -f /home/$username/peviitor/build/.htaccess
 
 git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api
