@@ -49,17 +49,6 @@ cp -r /home/$username/peviitor/api /home/$username/peviitor/build
 docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 8080:80 \
     -v /home/$username/peviitor/build:/var/www/html sebiboga/php-apache:latest
 
-# git clone https://github.com/peviitor-ro/solr.git /home/$username/peviitor/solr
-# sudo chmod -R 777 /home/$username/peviitor
-
-# docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 \
-#     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
-# chmod +x solr-auth.sh
 bash "$dir/solr-auth.sh"
-# Wait for solr-container to be ready
-# until [ "$(docker inspect -f {{.State.Running}} solr-container)" == "true" ]; do
-#     sleep 0.1;
-# done;
-# docker run --name data-migration --network mynetwork --ip 172.18.0.12 --rm sebiboga/peviitor-data-migration-local:latest
 
 echo "Script execution completed."
