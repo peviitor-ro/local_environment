@@ -5,7 +5,7 @@ echo $master_server
 curl "${master_server}solr/jobs/select?q=*:*&fl=job_title,job_link,company,hiringOrganization.name,country,remote,jobLocationType,validThrough,city,sursa,id,county&rows=1000000&wt=json&indent=true" -o backup.json
 jq '.response.docs' backup.json > cleaned_backup.json
 
-my_server=http://localhost:8983
+my_server=http://peviitorqa.go.ro:8983
 solr_user="solr"
 solr_password="SolrRocks"
 echo "Cleaning data on $my_server"
