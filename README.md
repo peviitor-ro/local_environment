@@ -7,6 +7,11 @@ Script to build local environment for peviitor project
 - Docker installed
 https://docs.docker.com/desktop/install/windows-install/
 
+## Directories
+- linux-local-auth -> local env with SOLR security
+- linux-local -> local env without security
+- qa -> env for QA
+
 ## How to run:
 How to run the script:
 - Go to the script location
