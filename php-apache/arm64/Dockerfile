@@ -33,7 +33,7 @@ echo 'Require all granted' >> /etc/apache2/apache2.conf && \
 echo '</Directory>' >> /etc/apache2/apache2.conf
 
 # Replace Swagger's default URL with your custom URL
-RUN sed -i 's|https://petstore.swagger.io/v2/swagger.json|http://peviitor.go.ro:8080/api/v1/swagger.json|g' /var/www/swagger-ui/swagger-initializer.js
+RUN sed -i 's|https://petstore.swagger.io/v2/swagger.json|http://localhost:8080/api/v0/swagger.json|g' /var/www/swagger-ui/swagger-initializer.js
 
 # Expose port 80
 EXPOSE 80
