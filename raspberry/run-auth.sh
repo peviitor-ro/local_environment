@@ -41,10 +41,9 @@ git clone https://github.com/peviitor-ro/search-engine.git /home/$username/pevii
 docker pull node:18-alpine
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
-docker run --name deploy_fe --network mynetwork --ip 172.18.0.13 \
+docker run --name deploy_fe --network mynetwork --ip 172.18.0.13 --rm \
     --restart unless-stopped \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
-
 rm -f /home/$username/peviitor/build/.htaccess
 
 git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api
