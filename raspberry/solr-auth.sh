@@ -215,6 +215,42 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
+curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-searchcomponent": {
+      "name": "suggest",
+      "class": "solr.SuggestComponent",
+      "suggester": {
+        "name": "jobTitleSuggester",
+        "lookupImpl": "FuzzyLookupFactory",
+        "dictionaryImpl": "DocumentDictionaryFactory",
+        "field": "job_title",
+        "suggestAnalyzerFieldType": "text_general",
+        "buildOnCommit": true,
+        "buildOnStartup": false
+      }
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_2/config
+
+  curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-requesthandler": {
+      "name": "/suggest",
+      "class": "solr.SearchHandler",
+      "startup": "lazy",
+      "defaults": {
+        "suggest": "true",
+        "suggest.dictionary": "jobTitleSuggester",
+        "suggest.count": "10"
+      },
+      "components": [
+        "suggest"
+      ]
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_2/config
+
+  docker exec -it solr-container curl "http://localhost:8983/solr/admin/cores?action=RELOAD&core=$CORE_NAME_2"
+
 master_server=$(curl -s https://api.peviitor.ro/devops/solr/)
 echo $master_server
 curl "${master_server}solr/jobs/select?q=*:*&fl=job_title,job_link,company,hiringOrganization.name,country,remote,jobLocationType,validThrough,city,sursa,id,county&rows=1000000&wt=json&indent=true" -o backup.json
