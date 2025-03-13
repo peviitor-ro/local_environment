@@ -1,4 +1,4 @@
-FROM arm64v8/php:7.4-apache
+FROM arm64v8/php:8.3-apache
 
 # Set ServerName directive to suppress warning
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf

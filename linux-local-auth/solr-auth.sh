@@ -19,7 +19,7 @@ docker run --name $CONTAINER_NAME --network mynetwork --ip 172.18.0.10 -d -p $SO
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
 echo "Waiting for Solr to start..."
-sleep 3
+sleep 10
 
 sudo chmod -R 777 /home/$username/peviitor
 
