@@ -25,9 +25,10 @@ How to ***repopulate SOLR***:
 ## Add `.env` file in `api` folder
 - Create .env file with the following structure:
 
-`SOLR_SERVER = 172.18.0.10:8983 
-SOLR_USER = <solr_user>
-SOLR_PASS = <solr_pass>`
+`LOCAL_SERVER = <local server>
+PROD_SERVER = <production server>
+SOLR_USER = <solr user>
+SOLR_PASS = <solr password>`
 
 # Linux script
 ## Requirements
