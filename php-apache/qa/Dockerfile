@@ -32,6 +32,10 @@ echo 'AllowOverride None' >> /etc/apache2/apache2.conf && \
 echo 'Require all granted' >> /etc/apache2/apache2.conf && \ 
 echo '</Directory>' >> /etc/apache2/apache2.conf
 
+# Hide version and OS info by editing security.conf
+RUN sed -i 's/^ServerTokens .*/ServerTokens Prod/' /etc/apache2/conf-enabled/security.conf && \
+    sed -i 's/^ServerSignature .*/ServerSignature Off/' /etc/apache2/conf-enabled/security.conf
+
 # Replace Swagger's default URL with your custom URL
 RUN sed -i 's|https://petstore.swagger.io/v2/swagger.json|http://peviitorqa.go.ro/api/v1/swagger.json|g' /var/www/swagger-ui/swagger-initializer.js
 

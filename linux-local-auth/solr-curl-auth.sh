@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Add here solr user and password
+master_server_user="<user>"
+master_server_password="<password>"
+
 master_server=$(curl -s https://api.peviitor.ro/devops/solr/)
 echo $master_server
 curl "${master_server}solr/jobs/select?q=*:*&fl=job_title,job_link,company,hiringOrganization.name,country,remote,jobLocationType,validThrough,city,sursa,id,county&rows=1000000&wt=json&indent=true" -o backup.json
