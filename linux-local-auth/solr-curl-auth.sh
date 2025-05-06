@@ -6,7 +6,9 @@ master_server_password="<password>"
 
 master_server=$(curl -s https://api.peviitor.ro/devops/solr/)
 echo $master_server
-curl "${master_server}solr/jobs/select?q=*:*&fl=job_title,job_link,company,hiringOrganization.name,country,remote,jobLocationType,validThrough,city,sursa,id,county&rows=1000000&wt=json&indent=true" -o backup.json
+curl --user "$master_server_user:$master_server_password" \
+    "${master_server}solr/jobs/select?q=*:*&fl=job_title,job_link,company,hiringOrganization.name,country,remote,jobLocationType,validThrough,city,sursa,id,county&rows=1000000&wt=json&indent=true" \
+    -o backup.json
 jq '.response.docs' backup.json > cleaned_backup.json
 
 my_server=http://localhost:8983
