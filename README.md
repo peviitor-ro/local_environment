@@ -22,8 +22,8 @@ After running the script you can find the peviitor directory here: C:\peviitor
 How to ***repopulate SOLR***:
 - Double click on the data-migration.bat script
 
-## Add `.env` file in `api` folder
-- Create .env file with the following structure:
+## Add `api.env` file in `api` folder
+- Create api.env file with the following structure:
 
 `LOCAL_SERVER = <local server>
 PROD_SERVER = <production server>
@@ -61,8 +61,8 @@ local_environment:
 ```
 sudo bash delete_containers_images_local_env.sh
 ```
-## Add `.env` file in `api` folder
-- Create .env file with the following structure:
+## Add `api.env` file in `api` folder
+- Create api.env file with the following structure:
 
 `SOLR_SERVER = 172.18.0.10:8983 
 SOLR_USER = <solr_user>
