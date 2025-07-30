@@ -122,7 +122,8 @@ if [ -z "$(docker network ls | grep $network)" ]; then
   docker network create --subnet=172.168.0.0/16 $network
 fi
 
-git clone https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
+
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
 docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
