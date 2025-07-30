@@ -397,3 +397,31 @@ jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
 curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
+
+
+echo "Script execution completed."
+
+echo " ================================================================="
+echo " ===================== IMPORTANT INFORMATIONS ===================="
+echo
+echo "SOLR is running on http://localhost:8983/solr/"
+echo "UI is running on http://localhost:8081/"
+echo "swagger-ui is running on http://localhost:8081/swagger-ui/"
+echo "JMeter is installed and configured. you can start it with command: jmeter"
+echo "To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass"
+echo "local username and password are: $new_user and $new_pass for SOLR"
+echo "to find docker container name: docker ps -a"
+echo "to find docker images: docker images"
+echo "to find docker logs: docker logs <container_name>"
+echo "to find docker container IP: docker inspect <container_name>"
+echo "to find docker container IP: docker inspect <container_name> | grep IPAddress"
+echo "docker is installed and configured. you can start it with command: docker start <container_name>"
+echo "docker is installed and configured. you can stop it with command: docker stop <container_name>"
+echo "docker is installed and configured. you can remove it with command: docker rm <container_name>"
+echo "docker is installed and configured. you can remove all containers with command: docker rm -f $(docker ps -a -q)"
+echo "docker is installed and configured. you can remove all images with command: docker rmi -f $(docker images -q)"
+echo "docker is installed and configured. you can remove all containers and images with command: docker rm -f $(docker ps -a -q) && docker rmi -f $(docker images -q)"
+echo " ================================================================="
+echo " ===================== enjoy local environment ==================="
+echo " ====================== peviitor.ro =============================="
+echo " ================================================================="
