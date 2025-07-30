@@ -14,7 +14,7 @@ SOLR_PORT=8983
 SECURITY_FILE="security.json"
 
 # Start Solr container
-# docker run -d --name $CONTAINER_NAME -p $SOLR_PORT:8983 solr:latest
+
 docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
@@ -213,7 +213,6 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
     ]
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
-docker run --name data-migration --network mynetwork --ip 172.168.0.12 --rm sebiboga/peviitor-data-migration-local:latest
 
 # Create security.json to enable authentication
 cat <<EOF > $SECURITY_FILE
