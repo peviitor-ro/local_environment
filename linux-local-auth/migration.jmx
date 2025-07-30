@@ -12,6 +12,8 @@
           </elementProp>
         </collectionProp>
       </elementProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="zimbor PROD">
@@ -26,6 +28,15 @@
         </elementProp>
       </ThreadGroup>
       <hashTree>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Authorization">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Authorization</stringProp>
+              <stringProp name="Header.value">Basic ${__base64Encode(${__P(user,sebi)}:${__P(pass,sebiissebiRocks)})}</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete all" enabled="true">
           <stringProp name="TestPlan.comments">Created from cURL on 2024-06-17T11:53:26.431</stringProp>
           <stringProp name="HTTPSampler.domain">${localip}</stringProp>
@@ -50,21 +61,17 @@
           <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager" enabled="true">
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
             <collectionProp name="HeaderManager.headers">
               <elementProp name="Content-Type" elementType="Header">
                 <stringProp name="Header.name">Content-Type</stringProp>
                 <stringProp name="Header.value">application/json</stringProp>
               </elementProp>
-              <elementProp name="" elementType="Header">
-                <stringProp name="Header.name">Authorization</stringProp>
-                <stringProp name="Header.value">Basic c29scjpTb2xyUm9ja3M=</stringProp>
-              </elementProp>
             </collectionProp>
             <stringProp name="TestPlan.comments">Created from cURL on 2024-06-17T11:53:26.431</stringProp>
           </HeaderManager>
           <hashTree/>
-          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
@@ -102,7 +109,7 @@
           </ResultCollector>
           <hashTree/>
         </hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="prod" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="prod">
           <stringProp name="TestPlan.comments">Created from cURL on 2024-05-30T21:04:49.891</stringProp>
           <stringProp name="HTTPSampler.domain">zimbor.go.ro</stringProp>
           <stringProp name="HTTPSampler.protocol">http</stringProp>
@@ -117,7 +124,7 @@
           <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
         </HTTPSamplerProxy>
         <hashTree>
-          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager" enabled="true">
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
             <collectionProp name="HeaderManager.headers">
               <elementProp name="Accept" elementType="Header">
                 <stringProp name="Header.name">Accept</stringProp>
@@ -143,12 +150,17 @@
                 <stringProp name="Header.name">User-Agent</stringProp>
                 <stringProp name="Header.value">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36</stringProp>
               </elementProp>
-              <elementProp name="Authorization" elementType="Header">
+            </collectionProp>
+            <stringProp name="TestPlan.comments">Created from cURL on 2024-05-30T21:04:49.891</stringProp>
+          </HeaderManager>
+          <hashTree/>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Authorization">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
                 <stringProp name="Header.name">Authorization</stringProp>
                 <stringProp name="Header.value">Basic c29scjpTb2xyUm9ja3M=</stringProp>
               </elementProp>
             </collectionProp>
-            <stringProp name="TestPlan.comments">Created from cURL on 2024-05-30T21:04:49.891</stringProp>
           </HeaderManager>
           <hashTree/>
           <JMESPathExtractor guiclass="JMESPathExtractorGui" testclass="JMESPathExtractor" testname="total" enabled="true">
@@ -157,7 +169,7 @@
             <stringProp name="JMESExtractor.matchNumber">1</stringProp>
           </JMESPathExtractor>
           <hashTree/>
-          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor" enabled="true">
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="JSR223 PostProcessor">
             <stringProp name="cacheKey">true</stringProp>
             <stringProp name="filename"></stringProp>
             <stringProp name="parameters"></stringProp>
@@ -167,7 +179,7 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
             <stringProp name="scriptLanguage">groovy</stringProp>
           </JSR223PostProcessor>
           <hashTree/>
-          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+          <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
             <boolProp name="ResultCollector.error_logging">false</boolProp>
             <objProp>
               <name>saveConfig</name>
@@ -223,7 +235,7 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
             <stringProp name="TestPlan.comments">https://www.anofm.ro/lmvw.html?agentie=ANOFM&amp;categ=3&amp;subcateg=1&amp;id_lmv=2268810</stringProp>
           </GenericController>
           <hashTree>
-            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="prod" enabled="true">
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="prod">
               <stringProp name="TestPlan.comments">Created from cURL on 2024-05-30T21:04:49.891</stringProp>
               <stringProp name="HTTPSampler.domain">zimbor.go.ro</stringProp>
               <stringProp name="HTTPSampler.protocol">http</stringProp>
@@ -238,7 +250,7 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
               <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
             </HTTPSamplerProxy>
             <hashTree>
-              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager" enabled="true">
+              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
                 <collectionProp name="HeaderManager.headers">
                   <elementProp name="Accept" elementType="Header">
                     <stringProp name="Header.name">Accept</stringProp>
@@ -302,7 +314,7 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
               <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
             </HTTPSamplerProxy>
             <hashTree>
-              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager" enabled="true">
+              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
                 <collectionProp name="HeaderManager.headers">
                   <elementProp name="Accept" elementType="Header">
                     <stringProp name="Header.name">Accept</stringProp>
@@ -324,16 +336,12 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
                     <stringProp name="Header.name">X-Requested-With</stringProp>
                     <stringProp name="Header.value">XMLHttpRequest</stringProp>
                   </elementProp>
-                  <elementProp name="Authorization" elementType="Header">
-                    <stringProp name="Header.name">Authorization</stringProp>
-                    <stringProp name="Header.value">Basic c29scjpTb2xyUm9ja3M=</stringProp>
-                  </elementProp>
                 </collectionProp>
                 <stringProp name="TestPlan.comments">Created from cURL on 2024-05-01T12:28:27.686</stringProp>
               </HeaderManager>
               <hashTree/>
             </hashTree>
-            <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
+            <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
               <boolProp name="ResultCollector.error_logging">false</boolProp>
               <objProp>
                 <name>saveConfig</name>
@@ -372,7 +380,7 @@ vars.put(&quot;loops&quot;, String.valueOf(loops))</stringProp>
             <hashTree/>
           </hashTree>
         </hashTree>
-        <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
+        <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
