@@ -217,6 +217,9 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
+
+
+
 # Create security.json to enable authentication
 cat <<EOF > $SECURITY_FILE
 {
@@ -234,6 +237,9 @@ cat <<EOF > $SECURITY_FILE
    "user-role":{"solr":"admin"}
 }}
 EOF
+
+echo "security.json created at $SECURITY_FILE"
+
 
 
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" --data "{\"add-searchcomponent\":{\"name\":\"suggest\",\"class\":\"solr.SuggestComponent\",\"suggester\":{\"name\":\"jobTitleSuggester\",\"lookupImpl\":\"FuzzyLookupFactory\",\"dictionaryImpl\":\"DocumentDictionaryFactory\",\"field\":\"job_title\",\"suggestAnalyzerFieldType\":\"text_general\",\"buildOnCommit\":\"true\",\"buildOnStartup\":\"false\"}}}" http://localhost:8983/solr/jobs/config
