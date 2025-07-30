@@ -119,18 +119,18 @@ done
 # Check if "mynetwork" network exists, create if it doesn't
 network='mynetwork'
 if [ -z "$(docker network ls | grep $network)" ]; then
-  docker network create --subnet=172.18.0.0/16 $network
+  docker network create --subnet=172.168.0.0/16 $network
 fi
 
 git clone https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
-docker run --name deploy_fe --network mynetwork --ip 172.18.0.13 --rm \
+docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
 rm -f /home/$username/peviitor/build/.htaccess
 
-git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api
-cp -r /home/$username/peviitor/api /home/$username/peviitor/build
+git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api/build
+
 docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 8080:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
