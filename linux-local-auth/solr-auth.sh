@@ -26,6 +26,10 @@ sleep 10
 
 sudo chmod -R 777 /home/$username/peviitor
 
+
+
+
+
 # Create Solr cores
 echo "Creating Solr cores"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
@@ -250,6 +254,15 @@ docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
 
 docker restart $CONTAINER_NAME
 
+docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/security.json
+docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
+sudo chown -R 8983:8983 /home/$username/peviitor/solr/core/data
+sudo chmod -R u+rwX /home/$username/peviitor/solr/core/data
+sudo docker restart $CONTAINER_NAME
+docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
+
+docker restart $CONTAINER_NAME
+
 
 # 1. Update package list
 sudo apt update
@@ -265,31 +278,81 @@ else
     java -version
 fi
 
+
+
+# Define JMETER_HOME
+JMETER_HOME=/usr/share/jmeter
+
 # Check if JMeter is installed
 if type -p jmeter; then
     echo "JMeter is already installed:"
     jmeter --version
 else
     echo "JMeter not found. Installing..."
+
     # Install initial JMeter from repo
     sudo apt install -y jmeter
+
     # Install GTK module to suppress warnings
     sudo apt install -y libcanberra-gtk3-module
+
     # Set ownership and permissions for /usr/share/jmeter
-    sudo chown -R $USER:$USER /usr/share/jmeter
-    sudo chmod -R a+rX /usr/share/jmeter
-    # Download latest JMeter binary
+    sudo chown -R $USER:$USER $JMETER_HOME
+    sudo chmod -R a+rX $JMETER_HOME
+
+    # Download latest JMeter binary (overwrite existing)
     wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
-    # Extract over existing installation
-    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C /usr/share/jmeter
-    # Download Plugins Manager
-    sudo wget -O /usr/share/jmeter/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
-    # Set proper permissions for plugins manager
-    sudo chmod a+r /usr/share/jmeter/lib/ext/plugins-manager.jar
-    # Verify installation
-    jmeter --version
+    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C $JMETER_HOME
+
+    # Download Plugins Manager jar
+    wget -O $JMETER_HOME/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
+    sudo chmod a+r $JMETER_HOME/lib/ext/plugins-manager.jar
+
+    # Install cmdrunner required for PluginsManagerCMD.sh tool
+    wget -O $JMETER_HOME/lib/cmdrunner-2.2.jar https://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar
+
+    # Install Plugins Manager CLI wrapper
+    java -cp $JMETER_HOME/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+
+    # Install Custom Functions plugin via PluginsManagerCMD.sh by plugin id
+    $JMETER_HOME/bin/PluginsManagerCMD.sh install jpgc-custfunc
+
+    # Optionally verify installed plugins
+    $JMETER_HOME/bin/PluginsManagerCMD.sh status
+
     echo "Installation complete. Run JMeter as your user with: jmeter"
-    echo "Since you own /usr/share/jmeter, Plugins Manager can now install plugins properly."
+    echo "Custom Functions plugin installed for base64 encoding support."
 fi
 
-jmeter -n -t "$RUNSH_DIR/migration.jmx"
+
+
+
+
+
+new_user=$2
+new_pass=$3
+old_user="solr"
+old_pass="SolrRocks"
+
+# Create new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"set-user\": {\"$new_user\":\"$new_pass\"}}"
+
+# Assign admin role to new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
+-H 'Content-type:application/json' \
+-d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
+
+
+
+
+jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
+
+
+
+
+# Delete old user
+curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"delete-user\": [\"$old_user\"]}"
