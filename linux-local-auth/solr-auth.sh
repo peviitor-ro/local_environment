@@ -15,7 +15,7 @@ SECURITY_FILE="security.json"
 
 # Start Solr container
 
-docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 -d -p $SOLR_PORT:$SOLR_PORT \
+docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
 echo "Waiting for Solr to start..."
