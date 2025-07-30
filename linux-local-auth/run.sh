@@ -36,9 +36,68 @@ fi
 
 if ! command -v docker &> /dev/null
 then
-    echo "Docker is not installed. Please install Docker and re-run the script."
-    exit 1
+    echo "Docker is not installed. Attempting to install Docker..."
+
+    if command -v apt &> /dev/null
+    then
+        sudo apt update
+        sudo apt install -y \
+            ca-certificates \
+            curl \
+            gnupg \
+            lsb-release
+
+        # Add Docker’s official GPG key and set up the stable repository
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+        sudo apt update
+        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+    elif command -v apt-get &> /dev/null
+    then
+        sudo apt-get update
+        sudo apt-get install -y \
+            ca-certificates \
+            curl \
+            gnupg \
+            lsb-release
+
+        sudo mkdir -p /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+        sudo apt-get update
+        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+    elif command -v yum &> /dev/null
+    then
+        sudo yum install -y yum-utils
+        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+        sudo systemctl start docker
+        sudo systemctl enable docker
+
+    else
+        echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Docker manually."
+        exit 1
+    fi
+
+    # Verify Docker installation
+    if command -v docker &> /dev/null
+    then
+        echo "Docker installed successfully."
+    else
+        echo "Failed to install Docker. Please install it manually."
+        exit 1
+    fi
 fi
+
 
 if [ "$SUDO_USER" ]; then
     username=$SUDO_USER
