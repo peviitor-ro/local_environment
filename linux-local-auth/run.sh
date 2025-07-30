@@ -2,6 +2,57 @@
 
 dir=$(pwd)
 
+# Prompt for Solr username and password
+
+# Function to validate the password against the specified policy
+validate_password() {
+  local password="$1"
+
+  # Check length >= 15
+  if [ ${#password} -ge 15 ]; then
+    return 0
+  fi
+
+  # Check for lowercase letter
+  if ! [[ $password =~ [a-z] ]]; then
+    return 1
+  fi
+
+  # Check for uppercase letter
+  if ! [[ $password =~ [A-Z] ]]; then
+    return 1
+  fi
+
+  # Check for digit
+  if ! [[ $password =~ [0-9] ]]; then
+    return 1
+  fi
+
+  # Check for special character from the set !@#$%^&*_-[]()
+  if ! [[ $password =~ [\!\@\#\$\%\^\&\*\_\-\[\]\(\)] ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Prompt for Solr username and password with validation
+read -p "Enter the Solr username: " solr_user
+
+while true; do
+  read -sp "Enter the Solr password: " solr_password
+  echo
+  if validate_password "$solr_password"; then
+    echo "Password accepted."
+    break
+  else
+    echo "Password must be at least 15 characters long OR contain at least one lowercase letter, one uppercase letter, one digit, and one special character (!@#$%^&*_-[]()). Please try again."
+  fi
+done
+
+echo "You entered user: $solr_user"
+# Note: Avoid echoing passwords in real use.
+
 if ! command -v git &> /dev/null
 then
     echo "Git is not installed. Attempting to install Git..."
@@ -146,8 +197,8 @@ cat > /home/$username/peviitor/build/api/api.env <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
-SOLR_USER = $SOLR_USER
-SOLR_PASS = $SOLR_PASS
+SOLR_USER = $solr_user
+SOLR_PASS = $olr_password
 EOF
 
 
@@ -155,6 +206,6 @@ EOF
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
-bash "$dir/solr-auth.sh" "$dir"
+bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
 echo "Script execution completed."
