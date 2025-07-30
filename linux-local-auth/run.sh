@@ -116,11 +116,18 @@ do
   fi
 done
 
-# Check if "mynetwork" network exists, create if it doesn't
 network='mynetwork'
-if [ -z "$(docker network ls | grep $network)" ]; then
-  docker network create --subnet=172.168.0.0/16 $network
+
+# Verifică dacă rețeaua există
+if [ ! -z "$(docker network ls | grep $network)" ]; then
+  echo "Network $network exists, removing..."
+  docker network rm $network
 fi
+
+# Creează rețeaua nouă
+echo "Creating network $network..."
+docker network create --subnet=172.168.0.0/16 $network
+
 
 git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 
