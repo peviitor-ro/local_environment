@@ -130,6 +130,9 @@ docker network create --subnet=172.168.0.0/16 $network
 
 
 git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
+ENV_FILE="/home/$username/peviitor/search-engine/env/.env.local"
+
+sed -i 's|http://localhost:8080|http://localhost:8081|g' "$ENV_FILE"
 
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
@@ -137,7 +140,7 @@ docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
 rm -f /home/$username/peviitor/build/.htaccess
 
-git clone --branch main --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/api/build
+git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
