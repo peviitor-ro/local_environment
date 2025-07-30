@@ -283,6 +283,34 @@ fi
 # Define JMETER_HOME
 JMETER_HOME=/usr/share/jmeter
 
+# Variables
+JMETER_HOME=/usr/share/jmeter
+REQUIRED_PLUGINS=("jpgc-functions")
+
+# Function to check if plugin is installed
+function is_plugin_installed() {
+    local plugin_id="$1"
+    
+    # Check if JMETER_HOME is set
+    if [ -z "$JMETER_HOME" ]; then
+        echo "Error: JMETER_HOME is not set" >&2
+        return 1
+    fi
+    
+    # Verify PluginsManagerCMD.sh exists
+    if [ ! -f "$JMETER_HOME/bin/PluginsManagerCMD.sh" ]; then
+        echo "Error: PluginsManagerCMD.sh not found in $JMETER_HOME/bin" >&2
+        return 1
+    fi
+    
+    # Use status command to check for plugin
+    if "$JMETER_HOME/bin/PluginsManagerCMD.sh" status 2>/dev/null | grep -q "$plugin_id"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Check if JMeter is installed
 if type -p jmeter; then
     echo "JMeter is already installed:"
@@ -290,39 +318,52 @@ if type -p jmeter; then
 else
     echo "JMeter not found. Installing..."
 
-    # Install initial JMeter from repo
-    sudo apt install -y jmeter
-
-    # Install GTK module to suppress warnings
-    sudo apt install -y libcanberra-gtk3-module
-
-    # Set ownership and permissions for /usr/share/jmeter
+    sudo apt install -y jmeter libcanberra-gtk3-module
     sudo chown -R $USER:$USER $JMETER_HOME
     sudo chmod -R a+rX $JMETER_HOME
 
-    # Download latest JMeter binary (overwrite existing)
     wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
     sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C $JMETER_HOME
 
-    # Download Plugins Manager jar
     wget -O $JMETER_HOME/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
     sudo chmod a+r $JMETER_HOME/lib/ext/plugins-manager.jar
 
-    # Install cmdrunner required for PluginsManagerCMD.sh tool
     wget -O $JMETER_HOME/lib/cmdrunner-2.2.jar https://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar
 
-    # Install Plugins Manager CLI wrapper
     java -cp $JMETER_HOME/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
-
-    # Install Custom Functions plugin via PluginsManagerCMD.sh by plugin id
-    $JMETER_HOME/bin/PluginsManagerCMD.sh install jpgc-custfunc
-
-    # Optionally verify installed plugins
-    $JMETER_HOME/bin/PluginsManagerCMD.sh status
-
-    echo "Installation complete. Run JMeter as your user with: jmeter"
-    echo "Custom Functions plugin installed for base64 encoding support."
 fi
+
+# Set permissions (if needed)
+sudo chown -R $USER:$USER $JMETER_HOME
+sudo chmod -R a+rX $JMETER_HOME
+
+# Download cmdrunner-2.3.jar (instead of 2.2) to lib
+wget -O $JMETER_HOME/lib/cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar
+
+# Download official Plugins Manager jar with proper naming
+wget -O $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar https://jmeter-plugins.org/get/
+
+
+
+# Run PluginManagerCMDInstaller with correct jar name
+java -cp $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+
+# Install plugins without sudo if you own the directory
+for plugin in "${REQUIRED_PLUGINS[@]}"; do
+  if is_plugin_installed "$plugin"; then
+    echo "Plugin $plugin is already installed."
+  else
+    echo "Plugin $plugin not found. Installing..."
+    $JMETER_HOME/bin/PluginsManagerCMD.sh install "$plugin"
+  fi
+done
+
+# Check status
+$JMETER_HOME/bin/PluginsManagerCMD.sh status
+
+
+echo "Installation and validation complete."
+
 
 
 
