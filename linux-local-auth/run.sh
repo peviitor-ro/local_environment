@@ -122,7 +122,7 @@ if [ -z "$(docker network ls | grep $network)" ]; then
   docker network create --subnet=172.168.0.0/16 $network
 fi
 
-git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
+git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 
 cd /home/$username/peviitor/search-engine
 docker build -t fe:latest .
@@ -130,11 +130,11 @@ docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
 rm -f /home/$username/peviitor/build/.htaccess
 
-git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api/build
+git clone --branch main --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/api/build
 
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
-bash "$dir/solr-auth.sh"
+bash "$dir/solr-auth.sh" "$dir"
 
 echo "Script execution completed."
