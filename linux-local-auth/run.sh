@@ -131,7 +131,7 @@ rm -f /home/$username/peviitor/build/.htaccess
 
 git clone https://github.com/peviitor-ro/api.git /home/$username/peviitor/api/build
 
-docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8080:80 \
+docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
 bash "$dir/solr-auth.sh"
