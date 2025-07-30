@@ -146,9 +146,10 @@ cat > /home/$username/peviitor/build/api/api.env <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
-SOLR_USER = solr
-SOLR_PASS = SolrRocks
+SOLR_USER = $SOLR_USER
+SOLR_PASS = $SOLR_PASS
 EOF
+
 
 
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
