@@ -1,5 +1,8 @@
 #!/bin/bash
 
+RUNSH_DIR=$1
+
+
 if [ "$SUDO_USER" ]; then
     username=$SUDO_USER
 else
@@ -283,4 +286,4 @@ else
     echo "Since you own /usr/share/jmeter, Plugins Manager can now install plugins properly."
 fi
 
-jmeter -n -t migration.jmx
+jmeter -n -t "$RUNSH_DIR/migration.jmx"
