@@ -241,3 +241,46 @@ docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
 
 docker restart $CONTAINER_NAME
 
+
+# 1. Update package list
+sudo apt update
+
+# Check if Java is installed
+if type -p java; then
+    echo "Java is already installed:"
+    java -version
+else
+    echo "Java not found. Installing OpenJDK 11..."
+    sudo apt install -y openjdk-11-jdk
+    echo "Java installed:"
+    java -version
+fi
+
+# Check if JMeter is installed
+if type -p jmeter; then
+    echo "JMeter is already installed:"
+    jmeter --version
+else
+    echo "JMeter not found. Installing..."
+    # Install initial JMeter from repo
+    sudo apt install -y jmeter
+    # Install GTK module to suppress warnings
+    sudo apt install -y libcanberra-gtk3-module
+    # Set ownership and permissions for /usr/share/jmeter
+    sudo chown -R $USER:$USER /usr/share/jmeter
+    sudo chmod -R a+rX /usr/share/jmeter
+    # Download latest JMeter binary
+    wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
+    # Extract over existing installation
+    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C /usr/share/jmeter
+    # Download Plugins Manager
+    sudo wget -O /usr/share/jmeter/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
+    # Set proper permissions for plugins manager
+    sudo chmod a+r /usr/share/jmeter/lib/ext/plugins-manager.jar
+    # Verify installation
+    jmeter --version
+    echo "Installation complete. Run JMeter as your user with: jmeter"
+    echo "Since you own /usr/share/jmeter, Plugins Manager can now install plugins properly."
+fi
+
+jmeter -n -t migration.jmx
