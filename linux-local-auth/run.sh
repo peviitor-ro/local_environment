@@ -198,7 +198,7 @@ LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
 SOLR_USER = $solr_user
-SOLR_PASS = $olr_password
+SOLR_PASS = $solr_password
 EOF
 
 
