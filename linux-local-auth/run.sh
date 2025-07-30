@@ -142,6 +142,15 @@ rm -f /home/$username/peviitor/build/.htaccess
 
 git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
+cat > /home/$username/peviitor/build/api/api.env <<EOF
+LOCAL_SERVER = 172.168.0.10:8983
+PROD_SERVER = zimbor.go.ro
+BACK_SERVER = https://api.laurentiumarian.ro/
+SOLR_USER = solr
+SOLR_PASS = SolrRocks
+EOF
+
+
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
