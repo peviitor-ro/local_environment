@@ -214,8 +214,6 @@ SOLR_USER = $solr_user
 SOLR_PASS = $solr_password
 EOF
 
-sed -i 's|http://localhost:8080/api/v0|http://localhost:8081/api/v0|g' /home/$username/peviitor/build/api/v0/swagger.json /home/$username/peviitor/build/api/v1/swagger.json
-
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
