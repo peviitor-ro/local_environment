@@ -18,6 +18,8 @@ SECURITY_FILE="security.json"
 
 # Start Solr container
 
+
+echo " --> starting Solr container...on port $SOLR_PORT"
 docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
@@ -27,13 +29,13 @@ sleep 10
 sudo chmod -R 777 /home/$username/peviitor
 
 # Create Solr cores
-echo "Creating Solr cores"
+echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
 
+echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
 ##### CORE Jobs ####
-
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-field": [
@@ -217,7 +219,11 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
+
+
+
 # Create security.json to enable authentication
+echo " --> Creating security.json at $SECURITY_FILE for Basic Authentication Plugin"
 cat <<EOF > $SECURITY_FILE
 {
 "authentication":{
@@ -235,15 +241,27 @@ cat <<EOF > $SECURITY_FILE
 }}
 EOF
 
+echo "security.json created at $SECURITY_FILE"
 
+
+echo " --> adding SuggestComponent to jobs core"
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" --data "{\"add-searchcomponent\":{\"name\":\"suggest\",\"class\":\"solr.SuggestComponent\",\"suggester\":{\"name\":\"jobTitleSuggester\",\"lookupImpl\":\"FuzzyLookupFactory\",\"dictionaryImpl\":\"DocumentDictionaryFactory\",\"field\":\"job_title\",\"suggestAnalyzerFieldType\":\"text_general\",\"buildOnCommit\":\"true\",\"buildOnStartup\":\"false\"}}}" http://localhost:8983/solr/jobs/config
-
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" --data "{\"add-requesthandler\":{\"name\":\"/suggest\",\"class\":\"solr.SearchHandler\",\"startup\":\"lazy\",\"defaults\":{\"suggest\":\"true\",\"suggest.dictionary\":\"jobTitleSuggester\",\"suggest.count\":\"10\"},\"components\":[\"suggest\"]}}" http://localhost:8983/solr/jobs/config
 
+echo " --> enabling Basic Authentication Plugin"
 docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
+docker restart $CONTAINER_NAME
+echo " --> $CONTAINER_NAME restarted. It is ready for authentication"
+
+#docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/security.json
+#docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
+sudo chown -R 8983:8983 /home/$username/peviitor/solr/core/data
+sudo chmod -R u+rwX /home/$username/peviitor/solr/core/data
+sudo docker restart $CONTAINER_NAME
+docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
 
 docker restart $CONTAINER_NAME
-
+echo " --> $CONTAINER_NAME restarted."
 
 # 1. Update package list
 sudo apt update
@@ -259,31 +277,147 @@ else
     java -version
 fi
 
+
+
+# Define JMETER_HOME
+JMETER_HOME=/usr/share/jmeter
+
+# Variables
+JMETER_HOME=/usr/share/jmeter
+REQUIRED_PLUGINS=("jpgc-functions")
+
+# Function to check if plugin is installed
+function is_plugin_installed() {
+    local plugin_id="$1"
+    
+    # Check if JMETER_HOME is set
+    if [ -z "$JMETER_HOME" ]; then
+        echo "Error: JMETER_HOME is not set" >&2
+        return 1
+    fi
+    
+    # Verify PluginsManagerCMD.sh exists
+    if [ ! -f "$JMETER_HOME/bin/PluginsManagerCMD.sh" ]; then
+        echo "Error: PluginsManagerCMD.sh not found in $JMETER_HOME/bin" >&2
+        return 1
+    fi
+    
+    # Use status command to check for plugin
+    if "$JMETER_HOME/bin/PluginsManagerCMD.sh" status 2>/dev/null | grep -q "$plugin_id"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Check if JMeter is installed
 if type -p jmeter; then
     echo "JMeter is already installed:"
     jmeter --version
 else
     echo "JMeter not found. Installing..."
-    # Install initial JMeter from repo
-    sudo apt install -y jmeter
-    # Install GTK module to suppress warnings
-    sudo apt install -y libcanberra-gtk3-module
-    # Set ownership and permissions for /usr/share/jmeter
-    sudo chown -R $USER:$USER /usr/share/jmeter
-    sudo chmod -R a+rX /usr/share/jmeter
-    # Download latest JMeter binary
+
+    sudo apt install -y jmeter libcanberra-gtk3-module
+    sudo chown -R $USER:$USER $JMETER_HOME
+    sudo chmod -R a+rX $JMETER_HOME
+
     wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
-    # Extract over existing installation
-    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C /usr/share/jmeter
-    # Download Plugins Manager
-    sudo wget -O /usr/share/jmeter/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
-    # Set proper permissions for plugins manager
-    sudo chmod a+r /usr/share/jmeter/lib/ext/plugins-manager.jar
-    # Verify installation
-    jmeter --version
-    echo "Installation complete. Run JMeter as your user with: jmeter"
-    echo "Since you own /usr/share/jmeter, Plugins Manager can now install plugins properly."
+    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C $JMETER_HOME
+
+    wget -O $JMETER_HOME/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
+    sudo chmod a+r $JMETER_HOME/lib/ext/plugins-manager.jar
+
+    wget -O $JMETER_HOME/lib/cmdrunner-2.2.jar https://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar
+
+    java -cp $JMETER_HOME/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
 fi
 
-jmeter -n -t "$RUNSH_DIR/migration.jmx"
+# Set permissions (if needed)
+sudo chown -R $USER:$USER $JMETER_HOME
+sudo chmod -R a+rX $JMETER_HOME
+
+# Download cmdrunner-2.3.jar (instead of 2.2) to lib
+wget -O $JMETER_HOME/lib/cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar
+
+# Download official Plugins Manager jar with proper naming
+wget -O $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar https://jmeter-plugins.org/get/
+
+
+
+# Run PluginManagerCMDInstaller with correct jar name
+java -cp $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+
+# Install plugins without sudo if you own the directory
+for plugin in "${REQUIRED_PLUGINS[@]}"; do
+  if is_plugin_installed "$plugin"; then
+    echo "Plugin $plugin is already installed."
+  else
+    echo "Plugin $plugin not found. Installing..."
+    $JMETER_HOME/bin/PluginsManagerCMD.sh install "$plugin"
+  fi
+done
+
+# Check status
+$JMETER_HOME/bin/PluginsManagerCMD.sh status
+
+
+echo "Installation and validation complete."
+
+
+
+
+
+
+
+new_user=$2
+new_pass=$3
+old_user="solr"
+old_pass="SolrRocks"
+
+# Create new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"set-user\": {\"$new_user\":\"$new_pass\"}}"
+
+# Assign admin role to new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
+-H 'Content-type:application/json' \
+-d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
+
+
+
+
+jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
+
+
+
+
+# Delete old user
+curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"delete-user\": [\"$old_user\"]}"
+
+
+echo "Script execution completed."
+
+echo " ================================================================="
+echo " ===================== IMPORTANT INFORMATIONS ===================="
+echo
+echo "SOLR is running on http://localhost:8983/solr/"
+echo "UI is running on http://localhost:8081/"
+echo "swagger-ui is running on http://localhost:8081/swagger-ui/"
+echo "JMeter is installed and configured. you can start it with command: jmeter"
+echo "To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass"
+echo "local username and password are: $new_user and $new_pass for SOLR"
+echo "to find docker container name: docker ps -a"
+echo "to find docker images: docker images"
+echo "to find docker logs: docker logs <container_name>"
+echo "to find docker container IP: docker inspect <container_name>"
+echo "to find docker container IP: docker inspect <container_name> | grep IPAddress"
+echo "docker is installed and configured. you can start it with command: docker start <container_name>"
+echo "docker is installed and configured. you can stop it with command: docker stop <container_name>"
+echo "docker is installed and configured. you can remove it with command: docker rm <container_name>"
+echo " ================================================================="
+echo " ===================== enjoy local environment ==================="
+echo " ====================== peviitor.ro =============================="
+echo " ================================================================="

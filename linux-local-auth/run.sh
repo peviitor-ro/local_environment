@@ -2,6 +2,67 @@
 
 dir=$(pwd)
 
+echo " ================================================================="
+echo " ================= local environment installer ==================="
+echo " ====================== peviitor.ro =============================="
+echo " ================================================================="
+
+# Prompt for Solr username and password
+
+# Function to validate the password against the specified policy
+validate_password() {
+  local password="$1"
+
+  # Check length >= 15
+  if [ ${#password} -ge 15 ]; then
+    return 0
+  fi
+
+  # Check for lowercase letter
+  if ! [[ $password =~ [a-z] ]]; then
+    return 1
+  fi
+
+  # Check for uppercase letter
+  if ! [[ $password =~ [A-Z] ]]; then
+    return 1
+  fi
+
+  # Check for digit
+  if ! [[ $password =~ [0-9] ]]; then
+    return 1
+  fi
+
+  # Check for special character from the set !@#$%^&*_-[]()
+  if ! [[ $password =~ [\!\@\#\$\%\^\&\*\_\-\[\]\(\)] ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+# Prompt for Solr username and password with validation
+read -p "Enter the Solr username: " solr_user
+
+while true; do
+  read -sp "Enter the Solr password: " solr_password
+  echo
+  if validate_password "$solr_password"; then
+    echo "Password accepted."
+    break
+  else
+    echo "Password must be at least 15 characters long OR contain at least one lowercase letter, one uppercase letter, one digit, and one special character (!@#$%^&*_-[]()). Please try again."
+  fi
+done
+
+echo " ================================================================="
+echo " ===================== use those credentials ====================="
+echo " ====================== for SOLR login ==========================="
+echo " ================================================================="
+echo "You entered user: $solr_user"
+# Note: Avoid echoing passwords in real use.
+echo "You entered password: $solr_password"
+
 if ! command -v git &> /dev/null
 then
     echo "Git is not installed. Attempting to install Git..."
@@ -128,33 +189,37 @@ fi
 echo "Creating network $network..."
 docker network create --subnet=172.168.0.0/16 $network
 
-
+echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
 git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 ENV_FILE="/home/$username/peviitor/search-engine/env/.env.local"
 
 sed -i 's|http://localhost:8080|http://localhost:8081|g' "$ENV_FILE"
-
 cd /home/$username/peviitor/search-engine
+
+echo " --> building FRONTEND container. this will take a while..."
 docker build -t fe:latest .
 docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
 rm -f /home/$username/peviitor/build/.htaccess
 
+echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
 git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
+echo " --> creating api.env file for API"
 cat > /home/$username/peviitor/build/api/api.env <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
-SOLR_USER = $SOLR_USER
-SOLR_PASS = $SOLR_PASS
+SOLR_USER = $solr_user
+SOLR_PASS = $solr_password
 EOF
 
+sed -i 's|http://localhost:8080/api/v0|http://localhost:8081/api/v0|g' /home/$username/peviitor/build/api/v0/swagger.json /home/$username/peviitor/build/api/v1/swagger.json
 
-
+echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
-bash "$dir/solr-auth.sh" "$dir"
+bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
-echo "Script execution completed."
+echo " --> end of script execution  <-- "
