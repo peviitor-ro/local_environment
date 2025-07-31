@@ -253,8 +253,8 @@ docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
 docker restart $CONTAINER_NAME
 echo " --> $CONTAINER_NAME restarted. It is ready for authentication"
 
-docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/security.json
-docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
+#docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/security.json
+#docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
 sudo chown -R 8983:8983 /home/$username/peviitor/solr/core/data
 sudo chmod -R u+rwX /home/$username/peviitor/solr/core/data
 sudo docker restart $CONTAINER_NAME
