@@ -18,6 +18,8 @@ SECURITY_FILE="security.json"
 
 # Start Solr container
 
+
+echo " --> starting Solr container...on port $SOLR_PORT"
 docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
@@ -26,18 +28,14 @@ sleep 10
 
 sudo chmod -R 777 /home/$username/peviitor
 
-
-
-
-
 # Create Solr cores
-echo "Creating Solr cores"
+echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
 
+echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
 ##### CORE Jobs ####
-
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-field": [
@@ -225,6 +223,7 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
 
 
 # Create security.json to enable authentication
+echo " --> Creating security.json at $SECURITY_FILE for Basic Authentication Plugin"
 cat <<EOF > $SECURITY_FILE
 {
 "authentication":{
@@ -245,14 +244,14 @@ EOF
 echo "security.json created at $SECURITY_FILE"
 
 
-
+echo " --> adding SuggestComponent to jobs core"
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" --data "{\"add-searchcomponent\":{\"name\":\"suggest\",\"class\":\"solr.SuggestComponent\",\"suggester\":{\"name\":\"jobTitleSuggester\",\"lookupImpl\":\"FuzzyLookupFactory\",\"dictionaryImpl\":\"DocumentDictionaryFactory\",\"field\":\"job_title\",\"suggestAnalyzerFieldType\":\"text_general\",\"buildOnCommit\":\"true\",\"buildOnStartup\":\"false\"}}}" http://localhost:8983/solr/jobs/config
-
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" --data "{\"add-requesthandler\":{\"name\":\"/suggest\",\"class\":\"solr.SearchHandler\",\"startup\":\"lazy\",\"defaults\":{\"suggest\":\"true\",\"suggest.dictionary\":\"jobTitleSuggester\",\"suggest.count\":\"10\"},\"components\":[\"suggest\"]}}" http://localhost:8983/solr/jobs/config
 
+echo " --> enabling Basic Authentication Plugin"
 docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
-
 docker restart $CONTAINER_NAME
+echo " --> $CONTAINER_NAME restarted. It is ready for authentication"
 
 docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/security.json
 docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
@@ -262,7 +261,7 @@ sudo docker restart $CONTAINER_NAME
 docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
 
 docker restart $CONTAINER_NAME
-
+echo " --> $CONTAINER_NAME restarted."
 
 # 1. Update package list
 sudo apt update

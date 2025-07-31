@@ -2,6 +2,11 @@
 
 dir=$(pwd)
 
+echo " ================================================================="
+echo " ================= local environment installer ==================="
+echo " ====================== peviitor.ro =============================="
+echo " ================================================================="
+
 # Prompt for Solr username and password
 
 # Function to validate the password against the specified policy
@@ -50,8 +55,13 @@ while true; do
   fi
 done
 
+echo " ================================================================="
+echo " ===================== use those credentials ====================="
+echo " ====================== for SOLR login ==========================="
+echo " ================================================================="
 echo "You entered user: $solr_user"
 # Note: Avoid echoing passwords in real use.
+echo "You entered password: $solr_password"
 
 if ! command -v git &> /dev/null
 then
@@ -179,20 +189,23 @@ fi
 echo "Creating network $network..."
 docker network create --subnet=172.168.0.0/16 $network
 
-
+echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
 git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 ENV_FILE="/home/$username/peviitor/search-engine/env/.env.local"
 
 sed -i 's|http://localhost:8080|http://localhost:8081|g' "$ENV_FILE"
-
 cd /home/$username/peviitor/search-engine
+
+echo " --> building FRONTEND container. this will take a while..."
 docker build -t fe:latest .
 docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
     -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
 rm -f /home/$username/peviitor/build/.htaccess
 
+echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
 git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
+echo " --> creating api.env file for API"
 cat > /home/$username/peviitor/build/api/api.env <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
@@ -201,11 +214,10 @@ SOLR_USER = $solr_user
 SOLR_PASS = $solr_password
 EOF
 
-
-
+echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
 bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
-echo "Script execution completed."
+echo " --> end of script execution  <-- "
