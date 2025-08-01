@@ -7,6 +7,8 @@ echo " ================= local environment installer ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
 
+sudo apt-get install coreutils
+
 # Prompt for Solr username and password
 
 # Function to validate the password against the specified policy
@@ -189,21 +191,68 @@ fi
 echo "Creating network $network..."
 docker network create --subnet=172.168.0.0/16 $network
 
-echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
-git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
-ENV_FILE="/home/$username/peviitor/search-engine/env/.env.local"
+#echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
+#git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
 
-sed -i 's|http://localhost:8080|http://localhost:8081|g' "$ENV_FILE"
-cd /home/$username/peviitor/search-engine
 
 echo " --> building FRONTEND container. this will take a while..."
-docker build -t fe:latest .
-docker run --name deploy_fe --network mynetwork --ip 172.168.0.13 --rm \
-    -v /home/$username/peviitor/build:/app/build fe:latest npm run build:local
+
+
+# Configurare
+REPO="peviitor-ro/search-engine"
+ASSET_NAME="build.zip"
+TARGET_DIR="/home/$username/peviitor"
+
+echo "Caut link-ul pentru $ASSET_NAME din ultimul release GitHub al repo-ului $REPO..."
+
+# Obține URL-ul download pentru build.zip din ultimul release
+DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" \
+  | grep "browser_download_url" \
+  | grep "$ASSET_NAME" \
+  | cut -d '"' -f 4)
+
+if [ -z "$DOWNLOAD_URL" ]; then
+  echo "EROARE: Nu am găsit URL-ul pentru \"$ASSET_NAME\" în ultimul release."
+  exit 1
+fi
+
+echo "Download URL găsit: $DOWNLOAD_URL"
+
+# Creează folderul țintă dacă nu există
+sudo mkdir -p "$TARGET_DIR"
+sudo chmod -R u+rwx ~/peviitor
+
+
+# Fișier temporar pentru arhivă
+TMP_FILE="/tmp/$ASSET_NAME"
+
+echo "Descarc $ASSET_NAME..."
+wget -q --show-progress "$DOWNLOAD_URL" -O "$TMP_FILE"
+if [ $? -ne 0 ]; then
+  echo "EROARE la descărcare."
+  exit 1
+fi
+
+echo "Dezarhivez arhiva în: $TARGET_DIR"
+unzip -o "$TMP_FILE" -d "$TARGET_DIR"
+if [ $? -ne 0 ]; then
+  echo "EROARE la dezarhivare."
+  exit 1
+fi
+
+# Șterge arhiva temporară
+sudo rm -f "$TMP_FILE"
+
+echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
+
+
+echo "Folderul build a fost adus local și dezarhivat."
 rm -f /home/$username/peviitor/build/.htaccess
+cd /home/$username/peviitor/search-engine
+
 
 echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
-git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
 echo " --> creating api.env file for API"
 cat > /home/$username/peviitor/build/api/api.env <<EOF
@@ -225,4 +274,6 @@ docker restart apache-container
 
 bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
+rm -f $dir/security.json
+rm -f $dir/jmeter.log
 echo " --> end of script execution  <-- "
