@@ -252,7 +252,7 @@ cd /home/$username/peviitor/search-engine
 
 
 echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
-git clone --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
 echo " --> creating api.env file for API"
 cat > /home/$username/peviitor/build/api/api.env <<EOF
