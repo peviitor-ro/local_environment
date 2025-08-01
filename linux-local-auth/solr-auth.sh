@@ -263,8 +263,6 @@ docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/security.json
 docker restart $CONTAINER_NAME
 echo " --> $CONTAINER_NAME restarted."
 
-# 1. Update package list
-sudo apt update
 
 # Check if Java is installed
 if type -p java; then
