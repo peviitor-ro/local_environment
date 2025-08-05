@@ -1,30 +1,35 @@
 #!/bin/bash
 
-dir=$(pwd)
+# Prevent running script as root
+if [ "$EUID" -eq 0 ]; then
+  echo "Please run this script as a normal user, NOT as root or with sudo."
+  exit 1
+fi
 
+dir=$(pwd)
 
 echo " ================================================================="
 echo " ================= local environment installer ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
 
-#check if homebrew is installed, otherwise will be automatically installed
+# Check if Homebrew is installed, install if needed
 if ! command -v brew >/dev/null 2>&1; then
   echo "Homebrew not found. Installing Homebrew..."
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  # Reload shell environment for brew to work immediately
+  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
 else
   echo "Homebrew is already installed."
 fi
 
-#check if coreutils is installed, otherwise will be automatically installed
+# Check if coreutils is installed, install if needed
 if command -v gls >/dev/null 2>&1; then
   echo "coreutils is already installed"
 else
   echo "coreutils is not installed. Installing..."
   brew install coreutils
 fi
-
-#!/bin/bash
 
 validate_password() {
   local password="$1"
@@ -75,42 +80,28 @@ echo " ===================== use those credentials ====================="
 echo " ====================== for SOLR login ==========================="
 echo " ================================================================="
 echo "You entered user: $solr_user"
-
-# Note: Avoid echoing passwords in real use.
 echo "You entered password: $solr_password"
 
-# Install homebrew packing manager
-if ! command -v git > /dev/null 2>&1
-then
-    echo "Git is not installed."
+# Check if Git is installed
+if ! command -v git >/dev/null 2>&1; then
+  echo "Git is not installed."
 
-    if ! xcode-select -p > /dev/null 2>&1
-    then
-        echo "Installing Xcode Command Line Tools (includes Git)..."
-        xcode-select --install
-        echo "Please complete Xcode Command Line Tools installation and then rerun this script."
-        exit 1
-    else
-        echo "Xcode Command Line Tools installed but Git not found. Please check manually."
-        exit 1
-    fi
+  # Install Xcode Command Line Tools if not installed
+  if ! xcode-select -p >/dev/null 2>&1; then
+    echo "Installing Xcode Command Line Tools (includes Git)..."
+    xcode-select --install
+    echo "Please complete installation and rerun the script."
+    exit 1
+  else
+    echo "Xcode Command Line Tools installed but Git not found. Please check manually."
+    exit 1
+  fi
 else
-    echo "Git is installed."
+  echo "Git is installed."
 fi
 
-if ! command -v brew > /dev/null 2>&1
-then
-    echo "Homebrew not found. Installing Homebrew..."
-    # Run install script as regular user (do NOT use sudo)
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-else
-    echo "Homebrew is already installed."
-fi
-
-echo "Installing/upgrading Git with Homebrew (as normal user)..."
-# No sudo here, run brew as regular user
+# Install or upgrade Git via Homebrew
+echo "Installing/upgrading Git using Homebrew..."
 brew install git || brew upgrade git
 
 echo "Done."
-
-
