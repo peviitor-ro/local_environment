@@ -104,4 +104,31 @@ fi
 echo "Installing/upgrading Git using Homebrew..."
 brew install git || brew upgrade git
 
-echo "Done."
+
+if ! command -v docker &> /dev/null
+then
+    echo "Docker is not installed. Attempting to install Docker..."
+
+    # Check for Homebrew and install if missing
+    if ! command -v brew &> /dev/null
+    then
+        echo "Homebrew not found. Installing Homebrew first..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # Reload shell environment so brew works immediately
+        eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+    fi
+
+    # Install Docker Desktop via Homebrew Cask
+    echo "Installing Docker Desktop..."
+    brew install --cask docker
+
+    echo "Docker Desktop installed. Please open Docker.app from your Applications folder to finish setup."
+else
+    echo "Docker is already installed."
+fi
+
+username=${SUDO_USER:-$USER}
+
+sudo rm -rf /home/$username/peviitor
+
+
