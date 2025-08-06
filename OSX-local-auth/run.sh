@@ -131,4 +131,65 @@ username=${SUDO_USER:-$USER}
 
 sudo rm -rf /home/$username/peviitor
 
+echo "Remove existing containers if they exist"
+for container in apache-container solr-container data-migration deploy-fe
+do
+  if [ "$(docker ps -aq -f name=$container)" ]; then
+    docker stop $container
+    docker rm $container
+  fi
+done
+
+network='mynetwork'
+
+if [ ! -z "$(docker network ls | grep $network)" ]; then
+  echo "Network $network exists, removing..."
+  docker network rm $network
+fi
+
+# Creează rețeaua nouă
+echo "Creating network $network..."
+docker network create --subnet=172.168.0.0/16 $network
+
+echo " --> building FRONTEND container. this will take a while..."
+
+# Configurare
+REPO="peviitor-ro/search-engine"
+ASSET_NAME="build.zip"
+TARGET_DIR="/home/$username/peviitor"
+
+echo "Caut link-ul pentru $ASSET_NAME din ultimul release GitHub al repo-ului $REPO..."
+
+# Obține URL-ul download pentru build.zip din ultimul release
+DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/$REPO/releases/latest" \
+  | grep "browser_download_url" \
+  | grep "$ASSET_NAME" \
+  | cut -d '"' -f 4)
+
+if [ -z "$DOWNLOAD_URL" ]; then
+  echo "EROARE: Nu am găsit URL-ul pentru \"$ASSET_NAME\" în ultimul release."
+  exit 1
+fi
+
+echo "Download URL găsit: $DOWNLOAD_URL"
+
+# Creează folderul țintă dacă nu există
+TARGET_DIR="/Users/$username/peviitor"
+
+# Create with sudo if outside user home
+sudo mkdir -p "$TARGET_DIR"
+
+# If you want to ensure you have rwx permissions in your ~/peviitor folder
+chmod -R u+rwx ~/peviitor
+
+TMP_FILE="/tmp/$ASSET_NAME"
+
+# Fișier temporar pentru arhivă
+brew install wget
+echo "Descarc $ASSET_NAME..."
+wget -q --show-progress "$DOWNLOAD_URL" -O "$TARGET_DIR"
+if [ $? -ne 0 ]; then
+  echo "EROARE la descărcare."
+  exit 1
+fi
 
