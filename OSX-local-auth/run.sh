@@ -156,7 +156,7 @@ echo " --> building FRONTEND container. this will take a while..."
 # Configurare
 REPO="peviitor-ro/search-engine"
 ASSET_NAME="build.zip"
-TARGET_DIR="/home/$username/peviitor"
+TARGET_DIR="/Users/$username/peviitor"
 
 echo "Caut link-ul pentru $ASSET_NAME din ultimul release GitHub al repo-ului $REPO..."
 
@@ -173,9 +173,6 @@ fi
 
 echo "Download URL găsit: $DOWNLOAD_URL"
 
-# Creează folderul țintă dacă nu există
-TARGET_DIR="/Users/$username/peviitor"
-
 # Create with sudo if outside user home
 sudo mkdir -p "$TARGET_DIR"
 
@@ -184,12 +181,35 @@ chmod -R u+rwx ~/peviitor
 
 TMP_FILE="/tmp/$ASSET_NAME"
 
-# Fișier temporar pentru arhivă
-brew install wget
-echo "Descarc $ASSET_NAME..."
-wget -q --show-progress "$DOWNLOAD_URL" -O "$TARGET_DIR"
-if [ $? -ne 0 ]; then
-  echo "EROARE la descărcare."
+brew install jq
+
+# Variables
+OWNER="peviitor-ro"
+REPO="search-engine"
+
+# Get the URL of the first asset in the latest release
+ASSET_URL=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases/latest" | \
+  jq -r '.assets[0].browser_download_url')
+
+# Download the asset
+if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+  echo "No release assets found."
   exit 1
 fi
+
+echo "Downloading latest release asset from $ASSET_URL"
+curl -L -o "$(basename $ASSET_URL)" "$ASSET_URL"
+
+
+echo "Dezarhivez arhiva în: $TARGET_DIR"
+unzip -o "build.zip" -d "$TARGET_DIR"
+if [ $? -ne 0 ]; then
+  echo "EROARE la dezarhivare."
+  exit 1
+fi
+
+#delete build.zip
+sudo rm -f "build.zip"
+
+echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
 
