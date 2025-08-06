@@ -96,6 +96,7 @@ then
     fi
 fi
 
+#aici am ramas
 
 if ! command -v docker &> /dev/null
 then
