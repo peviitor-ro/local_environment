@@ -213,3 +213,32 @@ sudo rm -f "build.zip"
 
 echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
 
+echo "Folderul build a fost adus local și dezarhivat."
+
+rm -f /Users/$username/peviitor/build/.htaccess
+
+echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /Users/$username/peviitor/build/api/
+
+echo " --> creating api.env file for API"
+cat > /Users/$username/peviitor/build/api/api.env <<EOF
+LOCAL_SERVER = 172.168.0.10:8983
+PROD_SERVER = zimbor.go.ro
+BACK_SERVER = https://api.laurentiumarian.ro/
+SOLR_USER = $solr_user
+SOLR_PASS = $solr_password
+EOF
+
+echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
+docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
+    -v /Users/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
+
+# Modificarea URL-ului pentru swagger in containerul lui Alex Stefan
+docker exec apache-container sed -i 's|url: "http://localhost:8080/api/v0/swagger.json"|url: "http://localhost:8081/api/v0/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
+docker restart apache-container
+
+bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
+
+rm -f $dir/security.json
+rm -f $dir/jmeter.log
+echo " --> end of script execution  <-- "
