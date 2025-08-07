@@ -265,23 +265,25 @@ echo " --> $CONTAINER_NAME restarted."
 
 
 # Check if Java is installed
-if type -p java; then
+if type -p java > /dev/null; then
     echo "Java is already installed:"
     java -version
 else
-    echo "Java not found. Installing OpenJDK 11..."
-    sudo apt install -y openjdk-11-jdk
+    echo "Java not found. Installing OpenJDK 11 via Homebrew..."
+    brew install openjdk@11
     echo "Java installed:"
+    # Add OpenJDK 11 to PATH for the current shell session (if needed)
+    export PATH="/usr/local/opt/openjdk@11/bin:$PATH"
     java -version
 fi
 
 
 
+
 # Define JMETER_HOME
-JMETER_HOME=/usr/share/jmeter
+JMETER_HOME=/opt/homebrew/Cellar/jmeter
 
 # Variables
-JMETER_HOME=/usr/share/jmeter
 REQUIRED_PLUGINS=("jpgc-functions")
 
 # Function to check if plugin is installed
@@ -315,35 +317,37 @@ if type -p jmeter; then
 else
     echo "JMeter not found. Installing..."
 
-    sudo apt install -y jmeter libcanberra-gtk3-module
-    sudo chown -R $USER:$USER $JMETER_HOME
+   brew install jmeter
+
+    sudo chown -R $USER $JMETER_HOME
     sudo chmod -R a+rX $JMETER_HOME
 
-    wget https://dlcdn.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
-    sudo tar --strip-components=1 -xvzf apache-jmeter-5.6.3.tgz -C $JMETER_HOME
 
-    wget -O $JMETER_HOME/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
-    sudo chmod a+r $JMETER_HOME/lib/ext/plugins-manager.jar
+# Define JMeter lib directory from Homebrew install
+JMETER_LIB_DIR="$(brew --prefix jmeter)/5.6.3/"
 
-    wget -O $JMETER_HOME/lib/cmdrunner-2.2.jar https://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar
+# Create the lib directory if it doesn't exist (should exist)
+mkdir -p "/opt/homebrew/Cellar/jmeter/5.6.3/lib"
 
-    java -cp $JMETER_HOME/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+# Download cmdrunner-2.2.jar using curl
+curl -L "https://search.maven.org/remotecontent?filepath=kg/apc/cmdrunner/2.2/cmdrunner-2.2.jar" -o "${JMETER_LIB_DIR}/cmdrunner-2.2.jar"
+
+echo "Downloaded cmdrunner-2.2.jar to $JMETER_LIB_DIR"
+
+
 fi
 
 # Set permissions (if needed)
-sudo chown -R $USER:$USER $JMETER_HOME
+sudo chown -R $USER $JMETER_HOME
 sudo chmod -R a+rX $JMETER_HOME
 
 # Download cmdrunner-2.3.jar (instead of 2.2) to lib
-wget -O $JMETER_HOME/lib/cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar
+wget -O $JMETER_HOME/5.6.3/lib/cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar
 
 # Download official Plugins Manager jar with proper naming
-wget -O $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar https://jmeter-plugins.org/get/
+wget -O $JMETER_HOME/5.6.3/lib/jmeter-plugins-manager-1.11.jar https://jmeter-plugins.org/get/
 
-
-
-# Run PluginManagerCMDInstaller with correct jar name
-java -cp $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.10.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+#aici am ramas.
 
 # Install plugins without sudo if you own the directory
 for plugin in "${REQUIRED_PLUGINS[@]}"; do
@@ -351,7 +355,7 @@ for plugin in "${REQUIRED_PLUGINS[@]}"; do
     echo "Plugin $plugin is already installed."
   else
     echo "Plugin $plugin not found. Installing..."
-    $JMETER_HOME/bin/PluginsManagerCMD.sh install "$plugin"
+    $JMETER_HOME/5.6.3/bin/PluginsManagerCMD.sh install "$plugin"
   fi
 done
 
