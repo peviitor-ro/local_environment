@@ -263,3 +263,136 @@ else
     export PATH="/opt/homebrew/opt/openjdk@11/bin:$PATH"
     java -version
 fi
+
+# Define JMETER_HOME
+JMETER_HOME=/opt/homebrew/Cellar/jmeter/libexec
+
+# Variables
+REQUIRED_PLUGINS=("jpgc-functions")
+
+# Function to check if plugin is installed
+function is_plugin_installed() {
+    local plugin_id="$1"
+    
+    # Check if JMETER_HOME is set
+    if [ -z "$JMETER_HOME" ]; then
+        echo "Error: JMETER_HOME is not set" >&2
+        return 1
+    fi
+    
+    # Verify PluginsManagerCMD.sh exists
+    if [ ! -f "$JMETER_HOME/bin/PluginsManagerCMD.sh" ]; then
+        echo "Error: PluginsManagerCMD.sh not found in $JMETER_HOME/bin" >&2
+        return 1
+    fi
+    
+    # Use status command to check for plugin
+    if "$JMETER_HOME/bin/PluginsManagerCMD.sh" status 2>/dev/null | grep -q "$plugin_id"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Check if JMeter is installed
+if type -p jmeter; then
+    echo "JMeter is already installed:"
+    jmeter --version
+else
+    echo "JMeter not found. Installing..."
+
+    brew install jmeter
+
+    mv /opt/homebrew/Cellar/jmeter/5.6.3/* /opt/homebrew/Cellar/jmeter/
+    mv /opt/homebrew/Cellar/jmeter/5.6.3/.* /opt/homebrew/Cellar/jmeter/ 2>/dev/null || true
+    rmdir /opt/homebrew/Cellar/jmeter/5.6.3
+
+
+    sudo chown -R $USER $JMETER_HOME
+    sudo chmod -R a+rX $JMETER_HOME
+
+    
+    wget -O $JMETER_HOME/lib/ext/plugins-manager.jar https://jmeter-plugins.org/get/
+    sudo chmod a+r $JMETER_HOME/lib/ext/plugins-manager.jar
+
+   wget -O $JMETER_HOME/lib/cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3/cmdrunner-2.3.jar
+
+    java -cp $JMETER_HOME/lib/ext/plugins-manager.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+fi
+
+# Set permissions (if needed)
+sudo chown -R $USER $JMETER_HOME
+sudo chmod -R a+rX $JMETER_HOME
+
+# Download official Plugins Manager jar with proper naming
+wget -O $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.11.jar https://jmeter-plugins.org/get/
+
+# Run PluginManagerCMDInstaller with correct jar name
+java -cp $JMETER_HOME/lib/ext/jmeter-plugins-manager-1.11.jar org.jmeterplugins.repository.PluginManagerCMDInstaller
+
+
+# Install plugins without sudo if you own the directory
+for plugin in "${REQUIRED_PLUGINS[@]}"; do
+  if is_plugin_installed "$plugin"; then
+    echo "Plugin $plugin is already installed."
+  else
+    echo "Plugin $plugin not found. Installing..."
+    $JMETER_HOME/bin/PluginsManagerCMD.sh install "$plugin"
+  fi
+done
+
+# Check status
+$JMETER_HOME/bin/PluginsManagerCMD.sh status
+
+echo "Installation and validation complete."
+
+
+docker exec -it $CONTAINER_NAME chown solr:solr /var/solr/data/
+docker exec -it $CONTAINER_NAME chmod 600 /var/solr/data/
+docker restart solr-container
+
+new_user=$2
+new_pass=$3
+old_user="solr"
+old_pass="SolrRocks"
+
+# Create new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"set-user\": {\"$new_user\":\"$new_pass\"}}"
+
+# Assign admin role to new user
+curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
+-H 'Content-type:application/json' \
+-d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
+
+/opt/homebrew/Cellar/jmeter/libexec/bin/jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
+
+# Delete old user
+curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
+-H 'Content-type:application/json' \
+-d "{\"delete-user\": [\"$old_user\"]}"
+
+echo "Script execution completed."
+
+echo " ================================================================="
+echo " ===================== IMPORTANT INFORMATIONS ===================="
+echo
+echo "SOLR is running on http://localhost:8983/solr/"
+echo "UI is running on http://localhost:8081/"
+echo "swagger-ui is running on http://localhost:8081/swagger-ui/"
+echo "JMeter is installed and configured. you can start it with command: jmeter"
+echo "To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass"
+echo "local username and password are: $new_user and $new_pass for SOLR"
+echo "to find docker container name: docker ps -a"
+echo "to find docker images: docker images"
+echo "to find docker logs: docker logs <container_name>"
+echo "to find docker container IP: docker inspect <container_name>"
+echo "to find docker container IP: docker inspect <container_name> | grep IPAddress"
+echo "docker is installed and configured. you can start it with command: docker start <container_name>"
+echo "docker is installed and configured. you can stop it with command: docker stop <container_name>"
+echo "docker is installed and configured. you can remove it with command: docker rm <container_name>"
+echo " ================================================================="
+echo " ===================== enjoy local environment ==================="
+echo " ====================== peviitor.ro =============================="
+echo " =================================================================
