@@ -12,6 +12,7 @@ fi
 CORE_NAME=auth
 CORE_NAME_2=jobs
 CORE_NAME_3=logo
+CORE_NAME_4=firme
 CONTAINER_NAME="solr-container"
 SOLR_PORT=8983
 SECURITY_FILE="security.json"
