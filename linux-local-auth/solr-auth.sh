@@ -296,6 +296,20 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
     ]
   }' http://localhost:8983/solr/$CORE_NAME_4/schema
 
+      docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "brands",
+        "type": "string",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
   docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-copy-field": {
@@ -304,6 +318,22 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
     }
   }' http://localhost:8983/solr/$CORE_NAME_4/schema
 
+
+docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-copy-field": {
+      "source": "brands",
+      "dest": "_text_"
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-copy-field": {
+      "source": "denumire",
+      "dest": "_text_"
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
 
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
