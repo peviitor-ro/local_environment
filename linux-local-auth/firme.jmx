@@ -16,6 +16,8 @@
           </elementProp>
         </collectionProp>
       </elementProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
     </TestPlan>
     <hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Thread Group">
@@ -33,7 +35,7 @@
           <collectionProp name="HeaderManager.headers">
             <elementProp name="" elementType="Header">
               <stringProp name="Header.name">Authorization</stringProp>
-              <stringProp name="Header.value">Basic ${__base64Encode(${__P(user,sebi)}:${__P(pass,sebiisthebest0102)})}</stringProp>
+              <stringProp name="Header.value">Basic ${__base64Encode(${__P(user)}:${__P(pass)})}</stringProp>
             </elementProp>
           </collectionProp>
         </HeaderManager>
@@ -169,7 +171,7 @@ if (docsArray.size() == 0 ) {
           </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /solr/firme/update?commit=true">
             <stringProp name="TestPlan.comments">Created from cURL on 2025-08-12T11:02:30.506208541</stringProp>
-            <stringProp name="HTTPSampler.domain">pi4.local</stringProp>
+            <stringProp name="HTTPSampler.domain">localhost</stringProp>
             <stringProp name="HTTPSampler.port">8983</stringProp>
             <stringProp name="HTTPSampler.protocol">http</stringProp>
             <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
@@ -190,7 +192,7 @@ if (docsArray.size() == 0 ) {
             <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager" enabled="false">
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
               <collectionProp name="HeaderManager.headers">
                 <elementProp name="Content-Type" elementType="Header">
                   <stringProp name="Header.name">Content-Type</stringProp>
@@ -200,35 +202,9 @@ if (docsArray.size() == 0 ) {
               <stringProp name="TestPlan.comments">Created from cURL on 2025-08-12T11:02:30.50642598</stringProp>
             </HeaderManager>
             <hashTree/>
-            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP HeaderManager">
-              <collectionProp name="HeaderManager.headers">
-                <elementProp name="Accept" elementType="Header">
-                  <stringProp name="Header.name">Accept</stringProp>
-                  <stringProp name="Header.value">application/json, text/plain, */*</stringProp>
-                </elementProp>
-                <elementProp name="Accept-Language" elementType="Header">
-                  <stringProp name="Header.name">Accept-Language</stringProp>
-                  <stringProp name="Header.value">en-US,en;q=0.9,ro-RO;q=0.8,ro;q=0.7</stringProp>
-                </elementProp>
-                <elementProp name="Content-type" elementType="Header">
-                  <stringProp name="Header.name">Content-type</stringProp>
-                  <stringProp name="Header.value">application/json</stringProp>
-                </elementProp>
-                <elementProp name="User-Agent" elementType="Header">
-                  <stringProp name="Header.name">User-Agent</stringProp>
-                  <stringProp name="Header.value">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36</stringProp>
-                </elementProp>
-                <elementProp name="X-Requested-With" elementType="Header">
-                  <stringProp name="Header.name">X-Requested-With</stringProp>
-                  <stringProp name="Header.value">XMLHttpRequest</stringProp>
-                </elementProp>
-              </collectionProp>
-              <stringProp name="TestPlan.comments">Created from cURL on 2024-05-01T12:28:27.686</stringProp>
-            </HeaderManager>
-            <hashTree/>
           </hashTree>
         </hashTree>
-        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree">
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="true">
           <boolProp name="ResultCollector.error_logging">false</boolProp>
           <objProp>
             <name>saveConfig</name>
