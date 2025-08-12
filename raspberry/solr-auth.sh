@@ -36,7 +36,7 @@ docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_4
 
-echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
+echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4  and $CORE_NAME_3"
 ##### CORE Jobs ####
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
