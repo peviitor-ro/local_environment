@@ -12,6 +12,7 @@ fi
 CORE_NAME=auth
 CORE_NAME_2=jobs
 CORE_NAME_3=logo
+CORE_NAME_4=firme
 CONTAINER_NAME="solr-container"
 SOLR_PORT=8983
 SECURITY_FILE="security.json"
@@ -496,6 +497,8 @@ curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication 
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
 
+
+jmeter -n -t "$RUNSH_DIR/firme.jmx" -Duser=$new_user -Dpass=$new_pass
 
 echo "Script execution completed."
 

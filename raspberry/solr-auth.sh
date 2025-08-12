@@ -498,6 +498,9 @@ curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication 
 -d "{\"delete-user\": [\"$old_user\"]}"
 
 
+jmeter -n -t "$RUNSH_DIR/firme.jmx" -Duser=$new_user -Dpass=$new_pass
+
+
 echo "Script execution completed."
 
 echo " ================================================================="
