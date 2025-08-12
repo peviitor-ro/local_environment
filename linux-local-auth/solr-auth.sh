@@ -29,12 +29,13 @@ sleep 10
 sudo chmod -R 777 /home/$username/peviitor
 
 # Create Solr cores
-echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
+echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4 and $CORE_NAME_3"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
+docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_4
 
-echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
+echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4  and $CORE_NAME_3"
 ##### CORE Jobs ####
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
@@ -219,6 +220,106 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
+
+##### CORE firme ####
+docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "cui",
+        "type": "plongs",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+
+
+docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "stare",
+        "type": "text_general",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "cod_postal",
+        "type": "plongs",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "cod_stare",
+        "type": "plongs",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+
+    docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-field": [
+      {
+        "name": "sector",
+        "type": "plongs",
+        "stored": true,
+        "indexed": true
+        "multiValued": true
+        "uninvertible": true
+      }
+    ]
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-copy-field": {
+      "source": "sector",
+      "dest": "_text_"
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+
+docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-copy-field": {
+      "source": "stare",
+      "dest": "_text_"
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+
+
+  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+  --data '{
+    "add-copy-field": {
+      "source": "id",
+      "dest": "_text_"
+    }
+  }' http://localhost:8983/solr/$CORE_NAME_4/schema
 
 
 
