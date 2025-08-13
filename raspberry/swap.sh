@@ -9,14 +9,14 @@ if [ -f /swapfile ]; then
   sudo rm /swapfile
 fi
 
-# Create a new 2GB swapfile
-echo "Creating 2GB swapfile at /swapfile ..."
-sudo fallocate -l 2G /swapfile
+# Create a new 6GB swapfile
+echo "Creating 6GB swapfile at /swapfile ..."
+sudo fallocate -l 6G /swapfile
 
 # If fallocate failed, use dd as fallback
 if [ $? -ne 0 ]; then
   echo "fallocate failed, using dd to create swapfile ..."
-  sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+  sudo dd if=/dev/zero of=/swapfile bs=1M count=6144
 fi
 
 # Set permissions
