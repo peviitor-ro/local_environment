@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Prevent running script as root
-if [ "$EUID" -eq 0 ]; then
-  echo "Please run this script as a normal user, NOT as root or with sudo."
-  exit 1
-fi
-
 dir=$(pwd)
 
 echo " ================================================================="
@@ -13,24 +7,11 @@ echo " ================= local environment installer ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
 
-# Check if Homebrew is installed, install if needed
-if ! command -v brew >/dev/null 2>&1; then
-  echo "Homebrew not found. Installing Homebrew..."
-  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  # Reload shell environment for brew to work immediately
-  eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
-else
-  echo "Homebrew is already installed."
-fi
+brew install coreutils
 
-# Check if coreutils is installed, install if needed
-if command -v gls >/dev/null 2>&1; then
-  echo "coreutils is already installed"
-else
-  echo "coreutils is not installed. Installing..."
-  brew install coreutils
-fi
+# Prompt for Solr username and password
 
+# Function to validate the password against the specified policy
 validate_password() {
   local password="$1"
 
@@ -62,6 +43,7 @@ validate_password() {
   return 0
 }
 
+# Prompt for Solr username and password with validation
 read -p "Enter the Solr username: " solr_user
 
 while true; do
@@ -80,56 +62,82 @@ echo " ===================== use those credentials ====================="
 echo " ====================== for SOLR login ==========================="
 echo " ================================================================="
 echo "You entered user: $solr_user"
+# Note: Avoid echoing passwords in real use.
 echo "You entered password: $solr_password"
 
-# Check if Git is installed
 if ! command -v git >/dev/null 2>&1; then
-  echo "Git is not installed."
+    echo "Git is not installed. Attempting to install Git..."
 
-  # Install Xcode Command Line Tools if not installed
-  if ! xcode-select -p >/dev/null 2>&1; then
-    echo "Installing Xcode Command Line Tools (includes Git)..."
-    xcode-select --install
-    echo "Please complete installation and rerun the script."
-    exit 1
-  else
-    echo "Xcode Command Line Tools installed but Git not found. Please check manually."
-    exit 1
-  fi
+    # Check if Homebrew is installed
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "Homebrew is not installed. Please install Homebrew first:"
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        exit 1
+    fi
+
+    # Install Git using Homebrew
+    brew update
+    brew install git
+
+    echo "Git installed successfully:"
+    git --version
 else
-  echo "Git is installed."
+    echo "Git is already installed."
+    git --version
 fi
 
-# Install or upgrade Git via Homebrew
-echo "Installing/upgrading Git using Homebrew..."
-brew install git || brew upgrade git
-
+   # Check if git installed successfully
+    if command -v git &> /dev/null
+    then
+        echo "Git installed successfully."
+    else
+        echo "Failed to install Git. Please install it manually."
+        exit 1
+    fi
 
 if ! command -v docker &> /dev/null
 then
     echo "Docker is not installed. Attempting to install Docker..."
 
-    # Check for Homebrew and install if missing
+    # Check if Homebrew is installed
     if ! command -v brew &> /dev/null
     then
-        echo "Homebrew not found. Installing Homebrew first..."
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        # Reload shell environment so brew works immediately
-        eval "$(/opt/homebrew/bin/brew shellenv 2>/dev/null || /usr/local/bin/brew shellenv 2>/dev/null)"
+        echo "Homebrew is not installed. Please install Homebrew first:"
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        exit 1
     fi
 
-    # Install Docker Desktop via Homebrew Cask
-    echo "Installing Docker Desktop..."
+    # Install Docker Desktop using Homebrew Cask
     brew install --cask docker
 
-    echo "Docker Desktop installed. Please open Docker.app from your Applications folder to finish setup."
-else
-    echo "Docker is already installed."
+    echo "Docker installed. Please start Docker Desktop from the Applications folder or via Spotlight."
+
+    # Wait until user starts Docker Desktop because Docker daemon must be running
+    echo "Waiting for Docker daemon to start..."
+    while ! docker info > /dev/null 2>&1; do
+        sleep 2
+    done
+
+    echo "Docker daemon is running."
 fi
 
-username=${SUDO_USER:-$USER}
+# Verify Docker installation
+if command -v docker &> /dev/null
+then
+    echo "Docker installed successfully:"
+    docker --version
+else
+    echo "Failed to install Docker. Please install it manually."
+    exit 1
+fi
 
-sudo rm -rf /home/$username/peviitor
+if [ "$SUDO_USER" ]; then
+    username=$SUDO_USER
+else
+    username=$USER
+fi
+
+rm -rf /Users/$username/peviitor
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
@@ -142,6 +150,7 @@ done
 
 network='mynetwork'
 
+# Verifică dacă rețeaua există
 if [ ! -z "$(docker network ls | grep $network)" ]; then
   echo "Network $network exists, removing..."
   docker network rm $network
@@ -152,6 +161,7 @@ echo "Creating network $network..."
 docker network create --subnet=172.168.0.0/16 $network
 
 echo " --> building FRONTEND container. this will take a while..."
+
 
 # Configurare
 REPO="peviitor-ro/search-engine"
@@ -173,52 +183,38 @@ fi
 
 echo "Download URL găsit: $DOWNLOAD_URL"
 
-# Create with sudo if outside user home
-sudo mkdir -p "$TARGET_DIR"
+# Creează folderul țintă dacă nu există
+ mkdir -p "$TARGET_DIR"
+ chmod -R u+rwx ~/peviitor
 
-# If you want to ensure you have rwx permissions in your ~/peviitor folder
-chmod -R u+rwx ~/peviitor
-
+ # Fișier temporar pentru arhivă
 TMP_FILE="/tmp/$ASSET_NAME"
 
-brew install jq
-
-# Variables
-OWNER="peviitor-ro"
-REPO="search-engine"
-
-# Get the URL of the first asset in the latest release
-ASSET_URL=$(curl -s "https://api.github.com/repos/$OWNER/$REPO/releases/latest" | \
-  jq -r '.assets[0].browser_download_url')
-
-# Download the asset
-if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-  echo "No release assets found."
+echo "Descarc $ASSET_NAME..."
+wget -q --show-progress "$DOWNLOAD_URL" -O "$TMP_FILE"
+if [ $? -ne 0 ]; then
+  echo "EROARE la descărcare."
   exit 1
 fi
 
-echo "Downloading latest release asset from $ASSET_URL"
-curl -L -o "$(basename $ASSET_URL)" "$ASSET_URL"
-
-
 echo "Dezarhivez arhiva în: $TARGET_DIR"
-unzip -o "build.zip" -d "$TARGET_DIR"
+unzip -o "$TMP_FILE" -d "$TARGET_DIR"
 if [ $? -ne 0 ]; then
   echo "EROARE la dezarhivare."
   exit 1
 fi
 
-#delete build.zip
-sudo rm -f "build.zip"
+# Șterge arhiva temporară
+rm -f "$TMP_FILE"
 
 echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
 
-echo "Folderul build a fost adus local și dezarhivat."
 
+echo "Folderul build a fost adus local și dezarhivat."
 rm -f /Users/$username/peviitor/build/.htaccess
 
 echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
-git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /Users/$username/peviitor/build/api/
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /Users/$username/peviitor/build/api
 
 echo " --> creating api.env file for API"
 cat > /Users/$username/peviitor/build/api/api.env <<EOF
@@ -231,7 +227,7 @@ EOF
 
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
-    -v /Users/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
+    -v /Users/$username/peviitor/build:/var/www/html alexstefan1702/php-apache-arm
 
 # Modificarea URL-ului pentru swagger in containerul lui Alex Stefan
 docker exec apache-container sed -i 's|url: "http://localhost:8080/api/v0/swagger.json"|url: "http://localhost:8081/api/v0/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
