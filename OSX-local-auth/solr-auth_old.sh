@@ -205,7 +205,7 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
 
 ##### CORE Logo ####
 
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+docker exec -it $CONTAINER_NAME  curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-field": [
       {
@@ -349,6 +349,8 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
     }
   }' http://localhost:8983/solr/$CORE_NAME_4/schema
 
+
+#aici am ramas
 
   # Create security.json to enable authentication
 echo " --> Creating security.json at $SECURITY_FILE for Basic Authentication Plugin"
