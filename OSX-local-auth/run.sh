@@ -7,7 +7,7 @@ echo " ================= local environment installer ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
 
-sudo apt-get install coreutils
+brew install coreutils
 
 # Prompt for Solr username and password
 
@@ -65,28 +65,28 @@ echo "You entered user: $solr_user"
 # Note: Avoid echoing passwords in real use.
 echo "You entered password: $solr_password"
 
-if ! command -v git &> /dev/null
-then
+if ! command -v git >/dev/null 2>&1; then
     echo "Git is not installed. Attempting to install Git..."
 
-    # Detect package manager and install Git
-    if command -v apt &> /dev/null
-    then
-        sudo apt update
-        sudo apt install -y git
-    elif command -v apt-get &> /dev/null
-    then
-        sudo apt-get update
-        sudo apt-get install -y git
-    elif command -v yum &> /dev/null
-    then
-        sudo yum install -y git
-    else
-        echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Git manually."
+    # Check if Homebrew is installed
+    if ! command -v brew >/dev/null 2>&1; then
+        echo "Homebrew is not installed. Please install Homebrew first:"
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
         exit 1
     fi
 
-    # Check if git installed successfully
+    # Install Git using Homebrew
+    brew update
+    brew install git
+
+    echo "Git installed successfully:"
+    git --version
+else
+    echo "Git is already installed."
+    git --version
+fi
+
+   # Check if git installed successfully
     if command -v git &> /dev/null
     then
         echo "Git installed successfully."
@@ -94,74 +94,42 @@ then
         echo "Failed to install Git. Please install it manually."
         exit 1
     fi
-fi
-
-#aici am ramas
 
 if ! command -v docker &> /dev/null
 then
     echo "Docker is not installed. Attempting to install Docker..."
 
-    if command -v apt &> /dev/null
+    # Check if Homebrew is installed
+    if ! command -v brew &> /dev/null
     then
-        sudo apt update
-        sudo apt install -y \
-            ca-certificates \
-            curl \
-            gnupg \
-            lsb-release
-
-        # Add Docker’s official GPG key and set up the stable repository
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-        sudo apt update
-        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-    elif command -v apt-get &> /dev/null
-    then
-        sudo apt-get update
-        sudo apt-get install -y \
-            ca-certificates \
-            curl \
-            gnupg \
-            lsb-release
-
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-        sudo apt-get update
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-    elif command -v yum &> /dev/null
-    then
-        sudo yum install -y yum-utils
-        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-        sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-        sudo systemctl start docker
-        sudo systemctl enable docker
-
-    else
-        echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Docker manually."
+        echo "Homebrew is not installed. Please install Homebrew first:"
+        echo '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
         exit 1
     fi
 
-    # Verify Docker installation
-    if command -v docker &> /dev/null
-    then
-        echo "Docker installed successfully."
-    else
-        echo "Failed to install Docker. Please install it manually."
-        exit 1
-    fi
+    # Install Docker Desktop using Homebrew Cask
+    brew install --cask docker
+
+    echo "Docker installed. Please start Docker Desktop from the Applications folder or via Spotlight."
+
+    # Wait until user starts Docker Desktop because Docker daemon must be running
+    echo "Waiting for Docker daemon to start..."
+    while ! docker info > /dev/null 2>&1; do
+        sleep 2
+    done
+
+    echo "Docker daemon is running."
 fi
 
+# Verify Docker installation
+if command -v docker &> /dev/null
+then
+    echo "Docker installed successfully:"
+    docker --version
+else
+    echo "Failed to install Docker. Please install it manually."
+    exit 1
+fi
 
 if [ "$SUDO_USER" ]; then
     username=$SUDO_USER
@@ -169,7 +137,7 @@ else
     username=$USER
 fi
 
-sudo rm -rf /home/$username/peviitor
+rm -rf /Users/$username/peviitor
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
@@ -192,17 +160,13 @@ fi
 echo "Creating network $network..."
 docker network create --subnet=172.168.0.0/16 $network
 
-#echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
-#git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
-
-
 echo " --> building FRONTEND container. this will take a while..."
 
 
 # Configurare
 REPO="peviitor-ro/search-engine"
 ASSET_NAME="build.zip"
-TARGET_DIR="/home/$username/peviitor"
+TARGET_DIR="/Users/$username/peviitor"
 
 echo "Caut link-ul pentru $ASSET_NAME din ultimul release GitHub al repo-ului $REPO..."
 
@@ -220,11 +184,10 @@ fi
 echo "Download URL găsit: $DOWNLOAD_URL"
 
 # Creează folderul țintă dacă nu există
-sudo mkdir -p "$TARGET_DIR"
-sudo chmod -R u+rwx ~/peviitor
+ mkdir -p "$TARGET_DIR"
+ chmod -R u+rwx ~/peviitor
 
-
-# Fișier temporar pentru arhivă
+ # Fișier temporar pentru arhivă
 TMP_FILE="/tmp/$ASSET_NAME"
 
 echo "Descarc $ASSET_NAME..."
@@ -242,21 +205,19 @@ if [ $? -ne 0 ]; then
 fi
 
 # Șterge arhiva temporară
-sudo rm -f "$TMP_FILE"
+rm -f "$TMP_FILE"
 
 echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
 
 
 echo "Folderul build a fost adus local și dezarhivat."
-rm -f /home/$username/peviitor/build/.htaccess
-cd /home/$username/peviitor/search-engine
-
+rm -f /Users/$username/peviitor/build/.htaccess
 
 echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
-git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
+git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /Users/$username/peviitor/build/api
 
 echo " --> creating api.env file for API"
-cat > /home/$username/peviitor/build/api/api.env <<EOF
+cat > /Users/$username/peviitor/build/api/api.env <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
@@ -266,12 +227,13 @@ EOF
 
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
-    -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
-
+    -v /Users/$username/peviitor/build:/var/www/html alexstefan1702/php-apache-arm
 
 # Modificarea URL-ului pentru swagger in containerul lui Alex Stefan
 docker exec apache-container sed -i 's|url: "http://localhost:8080/api/v0/swagger.json"|url: "http://localhost:8081/api/v0/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
 docker restart apache-container
+
+
 
 bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
