@@ -481,7 +481,7 @@ curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
 -H 'Content-type:application/json' \
 -d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
 
-jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
+jmeter -n -t "$RUNSH_DIR/migration.jmx" -Juser=$new_user -Jpass=$new_pass
 
 # Delete old user
 curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
@@ -511,3 +511,4 @@ echo " ================================================================="
 echo " ===================== enjoy local environment ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
+
