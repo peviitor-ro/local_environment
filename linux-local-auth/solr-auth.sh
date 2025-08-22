@@ -553,3 +553,27 @@ echo " ================================================================="
 echo " ===================== enjoy local environment ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
+
+cat << EOF > config.txt
+ =================================================================
+ ===================== IMPORTANT INFORMATIONS ====================
+
+SOLR is running on http://localhost:8983/solr/
+UI is running on http://localhost:8081/
+swagger-ui is running on http://localhost:8081/swagger-ui/
+JMeter is installed and configured. you can start it with command: jmeter
+To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass
+local username and password are: $new_user and $new_pass for SOLR
+to find docker container name: docker ps -a
+to find docker images: docker images
+to find docker logs: docker logs <container_name>
+to find docker container IP: docker inspect <container_name>
+to find docker container IP: docker inspect <container_name> | grep IPAddress
+docker is installed and configured. you can start it with command: docker start <container_name>
+docker is installed and configured. you can stop it with command: docker stop <container_name>
+docker is installed and configured. you can remove it with command: docker rm <container_name>
+ =================================================================
+ ===================== enjoy local environment ===================
+ ====================== peviitor.ro ==============================
+ =================================================================
+EOF
