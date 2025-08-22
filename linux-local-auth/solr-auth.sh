@@ -2,7 +2,6 @@
 
 RUNSH_DIR=$1
 
-
 if [ "$SUDO_USER" ]; then
     username=$SUDO_USER
 else
@@ -18,8 +17,6 @@ SOLR_PORT=8983
 SECURITY_FILE="security.json"
 
 # Start Solr container
-
-
 echo " --> starting Solr container...on port $SOLR_PORT"
 docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
@@ -490,14 +487,7 @@ done
 # Check status
 $JMETER_HOME/bin/PluginsManagerCMD.sh status
 
-
 echo "Installation and validation complete."
-
-
-
-
-
-
 
 new_user=$2
 new_pass=$3
@@ -514,66 +504,48 @@ curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
 -H 'Content-type:application/json' \
 -d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
 
-
-
-
-jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
-
-
-
-
 # Delete old user
 curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
 
+cat > informatii_importante.peviitor.txt <<EOF
+=================================================================
+                    IMPORTANT INFORMATION
+=================================================================
 
+SERVICES
+  [~] SOLR:       http://localhost:8983/solr/
+  [~] UI:         http://localhost:8081/
+  [~] Swagger UI: http://localhost:8081/swagger-ui/
+
+JMETER
+  [~] Migrare:  jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass
+  [~] Firme:    jmeter -n -t $RUNSH_DIR/firme.jmx    -Duser=$new_user -Dpass=$new_pass
+
+CREDENTIALS
+  [~] SOLR local user: $new_user
+  [~] SOLR local pass: $new_pass
+
+DOCKER
+  [~] List container:     docker ps -a
+  [~] List images:        docker images
+  [~] Logs container:     docker logs <container_name>
+  [~] Inspect container:  docker inspect <container_name>
+  [~] IP container:
+      - docker inspect <container_name>
+      - docker inspect <container_name> | grep IPAddress
+  [~] Start container:    docker start <container_name>
+  [~] Stop container:     docker stop <container_name>
+  [~] Remove container:   docker rm <container_name>
+
+=================================================================
+                       Local environment
+                          peviitor.ro
+=================================================================
+EOF
+
+jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
 jmeter -n -t "$RUNSH_DIR/firme.jmx" -Duser=$new_user -Dpass=$new_pass
 
 echo "Script execution completed."
-
-echo " ================================================================="
-echo " ===================== IMPORTANT INFORMATIONS ===================="
-echo
-echo "SOLR is running on http://localhost:8983/solr/"
-echo "UI is running on http://localhost:8081/"
-echo "swagger-ui is running on http://localhost:8081/swagger-ui/"
-echo "JMeter is installed and configured. you can start it with command: jmeter"
-echo "To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass"
-echo "local username and password are: $new_user and $new_pass for SOLR"
-echo "to find docker container name: docker ps -a"
-echo "to find docker images: docker images"
-echo "to find docker logs: docker logs <container_name>"
-echo "to find docker container IP: docker inspect <container_name>"
-echo "to find docker container IP: docker inspect <container_name> | grep IPAddress"
-echo "docker is installed and configured. you can start it with command: docker start <container_name>"
-echo "docker is installed and configured. you can stop it with command: docker stop <container_name>"
-echo "docker is installed and configured. you can remove it with command: docker rm <container_name>"
-echo " ================================================================="
-echo " ===================== enjoy local environment ==================="
-echo " ====================== peviitor.ro =============================="
-echo " ================================================================="
-
-cat << EOF > config.txt
- =================================================================
- ===================== IMPORTANT INFORMATIONS ====================
-
-SOLR is running on http://localhost:8983/solr/
-UI is running on http://localhost:8081/
-swagger-ui is running on http://localhost:8081/swagger-ui/
-JMeter is installed and configured. you can start it with command: jmeter
-To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass
-local username and password are: $new_user and $new_pass for SOLR
-to find docker container name: docker ps -a
-to find docker images: docker images
-to find docker logs: docker logs <container_name>
-to find docker container IP: docker inspect <container_name>
-to find docker container IP: docker inspect <container_name> | grep IPAddress
-docker is installed and configured. you can start it with command: docker start <container_name>
-docker is installed and configured. you can stop it with command: docker stop <container_name>
-docker is installed and configured. you can remove it with command: docker rm <container_name>
- =================================================================
- ===================== enjoy local environment ===================
- ====================== peviitor.ro ==============================
- =================================================================
-EOF
