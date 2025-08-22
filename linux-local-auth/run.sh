@@ -2,20 +2,20 @@
 
 dir=$(pwd)
 
-echo " ================================================================="
-echo " ================= local environment installer ==================="
-echo " ====================== peviitor.ro =============================="
-echo " ================================================================="
+echo "================================================================="
+echo "                      Local environment                          "
+echo "                          peviitor.ro                            "
+echo "================================================================="
 
 sudo apt-get install coreutils -y
 
-# Prompt for Solr username and password
-
-# Verificare daca sistemul face parte din familia Debian
+### Check if the script is running on a Debian-based system
+#########################################################################
 if ! command -v apt >/dev/null 2>&1; then
         echo -e "Sistemul nu face partea din familia Debian"
         exit 1
 fi
+#########################################################################
 
 # Function to validate the password against the specified policy
 validate_password() {
@@ -55,53 +55,70 @@ read -p "Enter the Solr username: " solr_user
 while true; do
   read -sp "Enter the Solr password: " solr_password
   if validate_password "$solr_password"; then
-    echo "Password accepted."
+    echo -e "\n[~] Password accepted."
     break
   else
-    echo "Password must be at least 15 characters long OR contain at least one lowercase letter, one uppercase letter, one digit, and one special character (!@#$%^&*_-[]()). Please try again."
+    echo -e "\n[~] Password must be strong. Try again!"
   fi
 done
 
-echo " ================================================================="
-echo " ===================== use those credentials ====================="
-echo " ====================== for SOLR login ==========================="
-echo " ================================================================="
+echo "================================================================="
+echo "                        Apache Solr login                        "
+echo "                          peviitor.ro                            "
+echo "================================================================="
+
 echo "You entered user: $solr_user"
-# Note: Avoid echoing passwords in real use.
 echo "You entered password: $solr_password"
 
-if ! command -v git &> /dev/null
-then
-    echo "Git is not installed. Attempting to install Git..."
-
-    # Detect package manager and install Git
-    if command -v apt &> /dev/null
-    then
-        sudo apt update
-        sudo apt install -y git
-    elif command -v apt-get &> /dev/null
-    then
-        sudo apt-get update
-        sudo apt-get install -y git
-    elif command -v yum &> /dev/null
-    then
+if ! command -v git &> /dev/null; then
+    if command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y git
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y git
+    elif command -v yum &> /dev/null; then
         sudo yum install -y git
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -Syu --noconfirm git
+    elif command -v apk &> /dev/null; then
+        sudo apk add git
     else
-        echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Git manually."
+        echo "No known package manager found."
         exit 1
     fi
 
-    # Check if git installed successfully
-    if command -v git &> /dev/null
-    then
-        echo "Git installed successfully."
+    if command -v git &> /dev/null; then
+        echo "--> git was installed successfully."
     else
-        echo "Failed to install Git. Please install it manually."
         exit 1
     fi
+else
+    echo "--> git is already installed."
 fi
 
-#aici am ramas
+if ! command -v unzip &> /dev/null; then
+    if command -v apt &> /dev/null; then
+        sudo apt update && sudo apt install -y unzip
+    elif command -v dnf &> /dev/null; then
+        sudo dnf install -y unzip
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y unzip
+    elif command -v pacman &> /dev/null; then
+        sudo pacman -Syu --noconfirm unzip
+    elif command -v apk &> /dev/null; then
+        sudo apk add unzip
+    else
+        echo "No known package manager found."
+        exit 1
+    fi
+
+    if command -v unzip &> /dev/null; then
+        echo "--> unzip was installed successfully."
+    else
+        exit 1
+    fi
+else
+    echo "--> unzip is already installed."
+fi
 
 if ! command -v docker &> /dev/null
 then
@@ -118,9 +135,9 @@ then
 
         # Add Docker’s official GPG key and set up the stable repository
         sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
           $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt update
@@ -136,9 +153,9 @@ then
             lsb-release
 
         sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
         echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
           $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
         sudo apt-get update
@@ -147,7 +164,7 @@ then
     elif command -v yum &> /dev/null
     then
         sudo yum install -y yum-utils
-        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  
         sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
         sudo systemctl start docker
         sudo systemctl enable docker
@@ -166,6 +183,7 @@ then
         exit 1
     fi
 fi
+
 
 
 if [ "$SUDO_USER" ]; then
@@ -251,11 +269,8 @@ sudo rm -f "$TMP_FILE"
 
 echo "Build-ul a fost actualizat cu succes în $TARGET_DIR"
 
-
 echo "Folderul build a fost adus local și dezarhivat."
 rm -f /home/$username/peviitor/build/.htaccess
-cd /home/$username/peviitor/search-engine
-
 
 echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
 git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
