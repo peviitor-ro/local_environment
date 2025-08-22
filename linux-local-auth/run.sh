@@ -7,9 +7,15 @@ echo " ================= local environment installer ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
 
-sudo apt-get install coreutils
+sudo apt-get install coreutils -y
 
 # Prompt for Solr username and password
+
+# Verificare daca sistemul face parte din familia Debian
+if ! command -v apt >/dev/null 2>&1; then
+        echo -e "Sistemul nu face partea din familia Debian"
+        exit 1
+fi
 
 # Function to validate the password against the specified policy
 validate_password() {
@@ -48,7 +54,6 @@ read -p "Enter the Solr username: " solr_user
 
 while true; do
   read -sp "Enter the Solr password: " solr_password
-  echo
   if validate_password "$solr_password"; then
     echo "Password accepted."
     break
