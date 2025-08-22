@@ -511,7 +511,7 @@ curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication 
 
 FILE="$HOME/Documents/informatii_importante.peviitor.txt"
 mkdir -p "$(dirname "$FILE")"
-cat > "$FILE" <<'EOF'
+cat > "$FILE" <<EOF
 =================================================================
                     IMPORTANT INFORMATION
 =================================================================
@@ -522,12 +522,12 @@ SERVICES
   [~] Swagger UI: http://localhost:8081/swagger-ui/
 
 JMETER
-  [~] Migrare:  jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass
-  [~] Firme:    jmeter -n -t $RUNSH_DIR/firme.jmx    -Duser=$new_user -Dpass=$new_pass
+  [~] Migrare:  jmeter -n -t ${RUNSH_DIR}/migration.jmx -Duser=${new_user} -Dpass=${new_pass}
+  [~] Firme:    jmeter -n -t ${RUNSH_DIR}/firme.jmx    -Duser=${new_user} -Dpass=${new_pass}
 
 CREDENTIALS
-  [~] SOLR local user: $new_user
-  [~] SOLR local pass: $new_pass
+  [~] SOLR local user: ${new_user}
+  [~] SOLR local pass: ${new_pass}
 
 DOCKER
   [~] List container:     docker ps -a
