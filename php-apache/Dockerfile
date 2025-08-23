@@ -38,5 +38,9 @@ RUN sed -i 's|https://petstore.swagger.io/v2/swagger.json|http://localhost:8080/
 # Expose port 80
 EXPOSE 80
 
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/swagger-ui/ || exit 1
+
 # Start Apache service
 CMD ["apache2-foreground"]

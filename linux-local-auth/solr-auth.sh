@@ -29,25 +29,49 @@ sudo chmod -R 777 /home/$username/peviitor
 # Create Solr cores
 echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4 and $CORE_NAME_3"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_2"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_3"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_4
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_4"
+  exit 1
+fi
 
 echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4  and $CORE_NAME_3"
 ##### CORE Jobs ####
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+response=$(docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-field": [
       {
         "name": "job_link",
         "type": "text_general",
         "stored": true,
-        "indexed": true
-        "multiValued": true
+        "indexed": true,
+        "multiValued": true,
         "uninvertible": true
       }
     ]
-  }' http://localhost:8983/solr/$CORE_NAME_2/schema
+  }' http://localhost:8983/solr/$CORE_NAME_2/schema)
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to add field job_link to core $CORE_NAME_2"
+  echo "$response"
+  exit 1
+fi
 
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
@@ -219,135 +243,7 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
 
 
 
-##### CORE firme ####
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cui",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "stare",
-        "type": "text_general",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cod_postal",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cod_stare",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-    docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "sector",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-      docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "brands",
-        "type": "string",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "sector",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "brands",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "denumire",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "stare",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "id",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
+##### CORE firme ####\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cui\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"stare\",\n        \"type\": \"text_general\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cod_postal\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cod_stare\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"sector\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"brands\",\n        \"type\": \"string\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n# Adăugăm câmpul 'denumire' lipsă\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"denumire\",\n        \"type\": \"text_general\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n# Reguli copy-field (denumire trebuie să fie definită înainte de a fi folosită aici)\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"sector\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"brands\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"denumire\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"stare\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"id\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n
 
 
 
@@ -547,7 +443,38 @@ DOCKER
 =================================================================
 EOF
 
-jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
-jmeter -n -t "$RUNSH_DIR/firme.jmx" -Duser=$new_user -Dpass=$new_pass
+clear
+echo -e "\n\033[1;34m=================================================================\033[0m"
+echo -e "\033[1;34m                    IMPORTANT INFORMATION\033[0m"
+echo -e "\033[1;34m=================================================================\033[0m"
 
-echo "Script execution completed."
+echo -e "\n\033[1;36mSERVICES\033[0m"
+echo -e "  [~] SOLR:       http://localhost:8983/solr/"
+echo -e "  [~] UI:         http://localhost:8081/"
+echo -e "  [~] Swagger UI: http://localhost:8081/swagger-ui/"
+
+echo -e "\n\033[1;36mJMETER COMMANDS (Highlighted)\033[0m"
+echo -e "  [~] Migrare:  \033[1;32mjmeter -n -t ${RUNSH_DIR}/migration.jmx -Duser=${new_user} -Dpass=${new_pass}\033[0m"
+echo -e "  [~] Firme:    \033[1;32mjmeter -n -t ${RUNSH_DIR}/firme.jmx    -Duser=${new_user} -Dpass=${new_pass}\033[0m"
+
+echo -e "\n\033[1;36mCREDENTIALS\033[0m"
+echo -e "  [~] SOLR local user: ${new_user}"
+echo -e "  [~] SOLR local pass: ${new_pass}"
+
+echo -e "\n\033[1;36mDOCKER\033[0m"
+echo -e "  [~] List container:     docker ps -a"
+echo -e "  [~] List images:        docker images"
+echo -e "  [~] Logs container:     docker logs <container_name>"
+echo -e "  [~] Inspect container:  docker inspect <container_name>"
+echo -e "  [~] IP container:"
+echo -e "      - docker inspect <container_name>"
+echo -e "      - docker inspect <container_name> | grep IPAddress"
+echo -e "  [~] Start container:    docker start <container_name>"
+echo -e "  [~] Stop container:     docker stop <container_name>"
+echo -e "  [~] Remove container:   docker rm <container_name>"
+
+echo -e "\n\033[1;34m=================================================================\033[0m"
+echo -e "\033[1;34m                       Local environment\033[0m"
+echo -e "\033[1;34m                          peviitor.ro\033[0m"
+echo -e "\033[1;34m=================================================================\033[0m\n"
+

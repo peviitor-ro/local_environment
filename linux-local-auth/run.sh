@@ -68,7 +68,7 @@ echo "                          peviitor.ro                            "
 echo "================================================================="
 
 echo "You entered user: $solr_user"
-echo "You entered password: $solr_password"
+# Parola nu este afișată pentru motive de securitate
 
 if ! command -v git &> /dev/null; then
     if command -v apt &> /dev/null; then
@@ -124,63 +124,69 @@ if ! command -v docker &> /dev/null
 then
     echo "Docker is not installed. Attempting to install Docker..."
 
-    if command -v apt &> /dev/null
-    then
-        sudo apt update
-        sudo apt install -y \
-            ca-certificates \
-            curl \
-            gnupg \
-            lsb-release
-
-        # Add Docker’s official GPG key and set up the stable repository
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
-          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-        sudo apt update
-        sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-    elif command -v apt-get &> /dev/null
-    then
-        sudo apt-get update
-        sudo apt-get install -y \
-            ca-certificates \
-            curl \
-            gnupg \
-            lsb-release
-
-        sudo mkdir -p /etc/apt/keyrings
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-        echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
-          $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-        sudo apt-get update
-        sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-    elif command -v yum &> /dev/null
-    then
-        sudo yum install -y yum-utils
-        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  
-        sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-        sudo systemctl start docker
-        sudo systemctl enable docker
-
+    # Check Docker version if already installed
+    if command -v docker &> /dev/null; then
+        DOCKER_VERSION=$(docker --version)
+        echo "Docker is already installed: $DOCKER_VERSION"
     else
-        echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Docker manually."
-        exit 1
-    fi
+        if command -v apt &> /dev/null
+        then
+            sudo apt update
+            sudo apt install -y \
+                ca-certificates \
+                curl \
+                gnupg \
+                lsb-release
 
-    # Verify Docker installation
-    if command -v docker &> /dev/null
-    then
-        echo "Docker installed successfully."
-    else
-        echo "Failed to install Docker. Please install it manually."
-        exit 1
+            # Add Docker’s official GPG key and set up the stable repository
+            sudo mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
+              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+            sudo apt update
+            sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+        elif command -v apt-get &> /dev/null
+        then
+            sudo apt-get update
+            sudo apt-get install -y \
+                ca-certificates \
+                curl \
+                gnupg \
+                lsb-release
+
+            sudo mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg   | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu   \
+              $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+        elif command -v yum &> /dev/null
+        then
+            sudo yum install -y yum-utils
+            sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo  
+            sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+            sudo systemctl start docker
+            sudo systemctl enable docker
+
+        else
+            echo "Could not find a supported package manager (apt, apt-get, or yum). Please install Docker manually."
+            exit 1
+        fi
+
+        # Verify Docker installation
+        if command -v docker &> /dev/null
+        then
+            echo "Docker installed successfully."
+        else
+            echo "Failed to install Docker. Please install it manually."
+            exit 1
+        fi
     fi
 fi
 
@@ -276,13 +282,18 @@ echo " --> cloning API repo from https://github.com/peviitor-ro/api.git"
 git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git /home/$username/peviitor/build/api/
 
 echo " --> creating api.env file for API"
-cat > /home/$username/peviitor/build/api/api.env <<EOF
+API_ENV_FILE="/home/$username/peviitor/build/api/api.env"
+if [ ! -f "$API_ENV_FILE" ]; then
+  cat > "$API_ENV_FILE" <<EOF
 LOCAL_SERVER = 172.168.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
 SOLR_USER = $solr_user
 SOLR_PASS = $solr_password
 EOF
+else
+  echo " --> api.env file already exists. Skipping creation."
+fi
 
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
 docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
