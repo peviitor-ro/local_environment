@@ -1,0 +1,11 @@
+﻿{
+    "minimumVersions": {
+        "powershell": "5.1",
+        "windowsBuild": 19041,
+        "ram_gb": 8,
+        "diskSpace_gb": 20,
+        "docker": "4.0.0",
+        "git": "2.30.0",
+        "java": "11.0.0"
+    }
+}
