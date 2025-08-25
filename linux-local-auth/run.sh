@@ -343,4 +343,3 @@ bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
 rm -f $dir/security.json
 rm -f $dir/jmeter.log
-echo " --> end of script execution  <-- "

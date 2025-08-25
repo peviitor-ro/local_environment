@@ -2,7 +2,6 @@
 
 RUNSH_DIR=$1
 
-
 if [ "$SUDO_USER" ]; then
     username=$SUDO_USER
 else
@@ -18,8 +17,6 @@ SOLR_PORT=8983
 SECURITY_FILE="security.json"
 
 # Start Solr container
-
-
 echo " --> starting Solr container...on port $SOLR_PORT"
 docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
@@ -32,25 +29,49 @@ sudo chmod -R 777 /home/$username/peviitor
 # Create Solr cores
 echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4 and $CORE_NAME_3"
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_2
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_2"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_3
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_3"
+  exit 1
+fi
+
 docker exec -it $CONTAINER_NAME bin/solr create_core -c $CORE_NAME_4
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to create core $CORE_NAME_4"
+  exit 1
+fi
 
 echo " -->Adding fields to Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4  and $CORE_NAME_3"
 ##### CORE Jobs ####
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
+response=$(docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
     "add-field": [
       {
         "name": "job_link",
         "type": "text_general",
         "stored": true,
-        "indexed": true
-        "multiValued": true
+        "indexed": true,
+        "multiValued": true,
         "uninvertible": true
       }
     ]
-  }' http://localhost:8983/solr/$CORE_NAME_2/schema
+  }' http://localhost:8983/solr/$CORE_NAME_2/schema)
+if [ $? -ne 0 ]; then
+  echo "ERROR: Failed to add field job_link to core $CORE_NAME_2"
+  echo "$response"
+  exit 1
+fi
 
 docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
   --data '{
@@ -221,109 +242,6 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
-##### CORE firme ####
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cui",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "stare",
-        "type": "text_general",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cod_postal",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "cod_stare",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-    docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-field": [
-      {
-        "name": "sector",
-        "type": "plongs",
-        "stored": true,
-        "indexed": true
-        "multiValued": true
-        "uninvertible": true
-      }
-    ]
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "sector",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "stare",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
-  docker exec -it solr-container curl -X POST -H "Content-Type: application/json" \
-  --data '{
-    "add-copy-field": {
-      "source": "id",
-      "dest": "_text_"
-    }
-  }' http://localhost:8983/solr/$CORE_NAME_4/schema
-
-
 # Create security.json to enable authentication
 echo " --> Creating security.json at $SECURITY_FILE for Basic Authentication Plugin"
 cat <<EOF > $SECURITY_FILE
@@ -376,7 +294,6 @@ else
     echo "Java installed:"
     java -version
 fi
-
 
 
 # Define JMETER_HOME
@@ -460,14 +377,7 @@ done
 # Check status
 $JMETER_HOME/bin/PluginsManagerCMD.sh status
 
-
 echo "Installation and validation complete."
-
-
-
-
-
-
 
 new_user=$2
 new_pass=$3
@@ -484,43 +394,80 @@ curl --user $old_user:$old_pass http://localhost:8983/solr/admin/authorization \
 -H 'Content-type:application/json' \
 -d "{\"set-user-role\": {\"$new_user\": [\"admin\"]}}"
 
-
-
-
-jmeter -n -t "$RUNSH_DIR/migration.jmx" -Duser=$new_user -Dpass=$new_pass
-
-
-
-
 # Delete old user
 curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication \
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
 
+FILE="informatii_importante.peviitor.txt"
+cat > "$FILE" <<EOF
+=================================================================
+                    IMPORTANT INFORMATION
+=================================================================
 
-jmeter -n -t "$RUNSH_DIR/firme.jmx" -Duser=$new_user -Dpass=$new_pass
+SERVICES
+  [~] SOLR:       http://localhost:8983/solr/
+  [~] UI:         http://localhost:8081/
+  [~] Swagger UI: http://localhost:8081/swagger-ui/
 
+JMETER
+  [~] Migrare:  jmeter -n -t ${RUNSH_DIR}/migration.jmx -Duser=${new_user} -Dpass=${new_pass}
+  [~] Firme:    jmeter -n -t ${RUNSH_DIR}/firme.jmx    -Duser=${new_user} -Dpass=${new_pass}
 
-echo "Script execution completed."
+CREDENTIALS
+  [~] SOLR local user: ${new_user}
+  [~] SOLR local pass: ${new_pass}
 
-echo " ================================================================="
-echo " ===================== IMPORTANT INFORMATIONS ===================="
-echo
-echo "SOLR is running on http://localhost:8983/solr/"
-echo "UI is running on http://localhost:8081/"
-echo "swagger-ui is running on http://localhost:8081/swagger-ui/"
-echo "JMeter is installed and configured. you can start it with command: jmeter"
-echo "To run the migration script, use the following command: jmeter -n -t $RUNSH_DIR/migration.jmx -Duser=$new_user -Dpass=$new_pass"
-echo "local username and password are: $new_user and $new_pass for SOLR"
-echo "to find docker container name: docker ps -a"
-echo "to find docker images: docker images"
-echo "to find docker logs: docker logs <container_name>"
-echo "to find docker container IP: docker inspect <container_name>"
-echo "to find docker container IP: docker inspect <container_name> | grep IPAddress"
-echo "docker is installed and configured. you can start it with command: docker start <container_name>"
-echo "docker is installed and configured. you can stop it with command: docker stop <container_name>"
-echo "docker is installed and configured. you can remove it with command: docker rm <container_name>"
-echo " ================================================================="
-echo " ===================== enjoy local environment ==================="
-echo " ====================== peviitor.ro =============================="
-echo " ================================================================="
+DOCKER
+  [~] List container:     docker ps -a
+  [~] List images:        docker images
+  [~] Logs container:     docker logs <container_name>
+  [~] Inspect container:  docker inspect <container_name>
+  [~] IP container:
+      - docker inspect <container_name>
+      - docker inspect <container_name> | grep IPAddress
+  [~] Start container:    docker start <container_name>
+  [~] Stop container:     docker stop <container_name>
+  [~] Remove container:   docker rm <container_name>
+
+=================================================================
+                       Local environment
+                          peviitor.ro
+=================================================================
+EOF
+
+clear
+echo -e "\n\033[1;34m=================================================================\033[0m"
+echo -e "\033[1;34m                    IMPORTANT INFORMATION\033[0m"
+echo -e "\033[1;34m=================================================================\033[0m"
+
+echo -e "\n\033[1;36mSERVICES\033[0m"
+echo -e "  [~] SOLR:       http://localhost:8983/solr/"
+echo -e "  [~] UI:         http://localhost:8081/"
+echo -e "  [~] Swagger UI: http://localhost:8081/swagger-ui/"
+
+echo -e "\n\033[1;36mJMETER COMMANDS (Highlighted)\033[0m"
+echo -e "  [~] Migrare:  \033[1;32mjmeter -n -t ${RUNSH_DIR}/migration.jmx -Duser=${new_user} -Dpass=${new_pass}\033[0m"
+echo -e "  [~] Firme:    \033[1;32mjmeter -n -t ${RUNSH_DIR}/firme.jmx    -Duser=${new_user} -Dpass=${new_pass}\033[0m"
+
+echo -e "\n\033[1;36mCREDENTIALS\033[0m"
+echo -e "  [~] SOLR local user: ${new_user}"
+echo -e "  [~] SOLR local pass: ${new_pass}"
+
+echo -e "\n\033[1;36mDOCKER\033[0m"
+echo -e "  [~] List container:     docker ps -a"
+echo -e "  [~] List images:        docker images"
+echo -e "  [~] Logs container:     docker logs <container_name>"
+echo -e "  [~] Inspect container:  docker inspect <container_name>"
+echo -e "  [~] IP container:"
+echo -e "      - docker inspect <container_name>"
+echo -e "      - docker inspect <container_name> | grep IPAddress"
+echo -e "  [~] Start container:    docker start <container_name>"
+echo -e "  [~] Stop container:     docker stop <container_name>"
+echo -e "  [~] Remove container:   docker rm <container_name>"
+
+echo -e "\n\033[1;34m=================================================================\033[0m"
+echo -e "\033[1;34m                       Local environment\033[0m"
+echo -e "\033[1;34m                          peviitor.ro\033[0m"
+echo -e "\033[1;34m=================================================================\033[0m\n"
+
