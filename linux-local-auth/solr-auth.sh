@@ -405,8 +405,7 @@ curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication 
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
 
-FILE="$HOME/Documents/informatii_importante.peviitor.txt"
-mkdir -p "$(dirname "$FILE")"
+FILE="informatii_importante.peviitor.txt"
 cat > "$FILE" <<EOF
 =================================================================
                     IMPORTANT INFORMATION

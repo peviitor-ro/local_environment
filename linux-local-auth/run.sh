@@ -9,13 +9,48 @@ echo "================================================================="
 
 sudo apt-get install coreutils -y
 
-### Check if the script is running on a Debian-based system
-#########################################################################
 if ! command -v apt >/dev/null 2>&1; then
-        echo -e "Sistemul nu face partea din familia Debian"
-        exit 1
+    echo -e "You are not running on a Debian-based system. Please run this script on a Debian-based system."
+    exit 1
 fi
-#########################################################################
+
+# Function to create swap space
+create_swap() {
+  local swap_size=$1
+  
+  # Check if swap already exists
+  if [[ $(swapon --show) ]]; then
+    echo "Swap space already exists. Skipping swap creation."
+    return 0
+  fi
+  
+  # Create swap file
+  echo "Creating ${swap_size} swap space..."
+  sudo fallocate -l "${swap_size}" /swapfile
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
+  
+  # Make swap permanent
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+  
+  # Set swappiness
+  sudo sysctl vm.swappiness=10
+  echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
+  
+  echo "Swap space of ${swap_size} created successfully."
+}
+
+# Ask user if they want to create swap space
+read -p "Do you want to create a swap space? (y/n): " create_swap_choice
+
+if [[ "$create_swap_choice" == "y" || "$create_swap_choice" == "Y" ]]; then
+  read -p "Enter swap size (e.g., 2G, 4G) [default: 2G]: " swap_size
+  if [[ -z "$swap_size" ]]; then
+    swap_size="2G"
+  fi
+  create_swap "$swap_size"
+fi
 
 # Function to validate the password against the specified policy
 validate_password() {
