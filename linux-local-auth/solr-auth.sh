@@ -242,11 +242,6 @@ docker exec -it solr-container curl -X POST -H "Content-Type: application/json" 
   }' http://localhost:8983/solr/$CORE_NAME_3/schema
 
 
-
-##### CORE firme ####\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cui\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"stare\",\n        \"type\": \"text_general\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cod_postal\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"cod_stare\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"sector\",\n        \"type\": \"plongs\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"brands\",\n        \"type\": \"string\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n# Adăugăm câmpul 'denumire' lipsă\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-field\": [\n      {\n        \"name\": \"denumire\",\n        \"type\": \"text_general\",\n        \"stored\": true,\n        \"indexed\": true,\n        \"multiValued\": true,\n        \"uninvertible\": true\n      }\n    ]\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n# Reguli copy-field (denumire trebuie să fie definită înainte de a fi folosită aici)\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"sector\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"brands\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"denumire\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"stare\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n\n\ndocker exec -it solr-container curl -X POST -H \"Content-Type: application/json\" \\\n  --data '{\n    \"add-copy-field\": {\n      \"source\": \"id\",\n      \"dest\": \"_text_\"\n    }\n  }' http://localhost:8983/solr/$CORE_NAME_4/schema\n
-
-
-
 # Create security.json to enable authentication
 echo " --> Creating security.json at $SECURITY_FILE for Basic Authentication Plugin"
 cat <<EOF > $SECURITY_FILE
@@ -299,7 +294,6 @@ else
     echo "Java installed:"
     java -version
 fi
-
 
 
 # Define JMETER_HOME
@@ -405,8 +399,7 @@ curl --user $new_user:$new_pass http://localhost:8983/solr/admin/authentication 
 -H 'Content-type:application/json' \
 -d "{\"delete-user\": [\"$old_user\"]}"
 
-FILE="$HOME/Documents/informatii_importante.peviitor.txt"
-mkdir -p "$(dirname "$FILE")"
+FILE="informatii_importante.peviitor.txt"
 cat > "$FILE" <<EOF
 =================================================================
                     IMPORTANT INFORMATION
