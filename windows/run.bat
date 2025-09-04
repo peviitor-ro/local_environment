@@ -6,9 +6,21 @@ IF ERRORLEVEL 1 (echo Git not installed. Install Git and re-run this script. pau
 rem Create directory
 if not exist "C:\peviitor" (mkdir C:\peviitor)
 
-rem Start Docker Desktop
-start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
-timeout /T 10
+rem Check if Docker is installed
+where docker >nul 2>&1
+IF ERRORLEVEL 1 (
+    echo Docker not installed. Install Docker and re-run this script.
+    pause
+    exit /b 1
+)
+
+rem Check if Docker is running
+docker info >nul 2>&1
+IF ERRORLEVEL 1 (
+    echo Docker is installed but not running. Starting Docker Desktop...
+    start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"
+)
+
 rem Stop and remove existing docker containers 
 docker ps -a --format "{{.Names}}" | findstr /C:"apache-container">nul 2>&1 && (docker stop apache-container && docker rm apache-container)
 docker ps -a --format "{{.Names}}" | findstr /C:"solr-container">nul 2>&1 && (docker stop solr-container && docker rm solr-container)
