@@ -17,7 +17,7 @@ rem --- Initialize variables ---
 set "POWERSHELL=powershell -NoProfile -ExecutionPolicy Bypass -Command"
 set "PEVIITOR_DIR=%USERPROFILE%\peviitor"
 set "SOLR_PORT=8983"
-set "RESTART_REQUIRED="
+set "RESTART_REQUIRED=0"
 
 rem --- Helper functions ---
 goto :main
@@ -49,17 +49,17 @@ if defined RESTART_REQUIRED (
 )
 goto :eof
 
-:validate_password
-set "_pwd=%~1"
-set "_len=0"
-setlocal enabledelayedexpansion
-for /l %%i in (0,1,100) do if "!_pwd:~%%i,1!" neq "" set /a _len+=1
-if !_len! geq 15 endlocal & exit /b 0
-echo !_pwd!| findstr /r "^.*[a-z].*[A-Z].*[0-9].*[!@#$%%^&*_\-\[\]\(\)].*$" >nul && (
-    endlocal & exit /b 0
-) || (
-    endlocal & exit /b 1
-)
+rem :validate_password
+rem set "_pwd=%~1"
+rem set "_len=0"
+rem setlocal enabledelayedexpansion
+rem for /l %%i in (0,1,100) do if "!_pwd:~%%i,1!" neq "" set /a _len+=1
+rem if !_len! geq 15 endlocal & exit /b 0
+rem echo !_pwd!| findstr /r "^.*[a-z].*[A-Z].*[0-9].*[!@#$%%^&*_\-\[\]\(\)].*$" >nul && (
+rem     endlocal & exit /b 0
+rem ) || (
+rem     endlocal & exit /b 1
+rem )
 
 :run_with_log
 %~1 >"%TEMP%\%~2.log" 2>&1
@@ -134,26 +134,30 @@ call :run_with_log "podman version" "podman_verify" "Podman verification failed"
 echo Podman setup completed.
 
 rem --- Get Solr credentials ---
-echo.
-echo =================================================================
-echo Please provide Solr credentials
-echo =================================================================
+rem TODO: Implement security.json for Solr authentication
+rem echo.
+rem echo =================================================================
+rem echo Please provide Solr credentials
+rem echo =================================================================
+rem
+rem set /p SOLR_USER=Enter Solr username: 
+rem :get_password
+rem %POWERSHELL% "[Console]::Error.Write('Enter Solr password (hidden): '); $pwd = Read-Host -AsSecureString; $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pwd); [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)" > "%TEMP%\pwd.txt"
+rem set /p SOLR_PASS=<"%TEMP%\pwd.txt"
+rem del "%TEMP%\pwd.txt" 2>nul
+rem
+rem call :validate_password "%SOLR_PASS%"
+rem if errorlevel 1 (
+rem     echo Password must be 15+ characters OR contain lowercase, uppercase, digit, and special chars. Try again.
+rem     goto get_password
+rem )
+rem
+rem echo Credentials accepted: %SOLR_USER% / [hidden]
 
-set /p SOLR_USER=Enter Solr username: 
-:get_password
-%POWERSHELL% "[Console]::Error.Write('Enter Solr password (hidden): '); $pwd = Read-Host -AsSecureString; $BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($pwd); [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)" > "%TEMP%\pwd.txt"
-set /p SOLR_PASS=<"%TEMP%\pwd.txt"
-del "%TEMP%\pwd.txt" 2>nul
+rem Temporary default values until security.json is implemented
+set "SOLR_USER=solr"
+set "SOLR_PASS=solrRocks"
 
-call :validate_password "%SOLR_PASS%"
-if errorlevel 1 (
-    echo Password must be 15+ characters OR contain lowercase, uppercase, digit, and special chars. Try again.
-    goto get_password
-)
-
-echo Credentials accepted: %SOLR_USER% / [hidden]
-
-rem --- Clean workspace ---
 if exist "%PEVIITOR_DIR%" rmdir /s /q "%PEVIITOR_DIR%"
 
 rem --- Clean containers and network ---
@@ -192,6 +196,7 @@ rem --- Create API config ---
     echo LOCAL_SERVER = 172.168.0.10:8983
     echo PROD_SERVER = zimbor.go.ro
     echo BACK_SERVER = https://api.laurentiumarian.ro/
+    rem TODO: Remove these hardcoded credentials when security.json is implemented
     echo SOLR_USER = %SOLR_USER%
     echo SOLR_PASS = %SOLR_PASS%
 ) > "%PEVIITOR_DIR%\build\api\api.env"
@@ -211,6 +216,7 @@ podman exec apache-container sh -c "sed -i 's|url: \"http://localhost:8080/api/v
 podman restart apache-container >nul 2>&1
 
 rem Solr setup
+rem TODO: Remove -InitUser and -InitPass parameters when security.json is implemented
 %POWERSHELL% "& '%~dp0configure-solr.ps1' -NetworkName 'mynetwork' -SolrContainerName 'solr-container' -SolrIp '172.168.0.10' -SolrPort %SOLR_PORT% -AuthCore 'auth' -JobsCore 'jobs' -LogoCore 'logo' -FirmeCore 'firme' -InitUser '%SOLR_USER%' -InitPass '%SOLR_PASS%'"
 if errorlevel 1 call :handle_error "Solr configuration failed"
 
@@ -252,6 +258,7 @@ if exist "%MIGRATION_JMX%" (
     
     if exist "%JMETER_HOME%\bin\jmeter.bat" (
         echo Running data migration...
+        rem TODO: Update migration to use security.json instead of hardcoded credentials
         call "%JMETER_HOME%\bin\jmeter.bat" -n -t "%MIGRATION_JMX%" -Juser=solr -Jpass=solrRocks
         if errorlevel 1 echo WARNING: Migration had issues but continuing...
         
@@ -271,18 +278,12 @@ echo UI: http://localhost:8081/
 echo API: http://localhost:8081/api/
 echo Swagger: http://localhost:8081/swagger-ui/
 echo.
-echo JMeter: %JMETER_HOME%
 echo =================================================================
 
-set "CHROME=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if exist "%CHROME%" (
-    start "" "%CHROME%" "http://localhost:8081/"
-    start "" "%CHROME%" "http://localhost:8983/solr/#/jobs/query"
-    start "" "%CHROME%" "http://localhost:8081/swagger-ui"
-    start "" "%CHROME%" "http://localhost:8081/api/v0/random"
-) else (
-    echo Chrome not found. Please open URLs manually.
-)
+start "" "http://localhost:8081/"
+start "" "http://localhost:8983/solr/#/jobs/query"
+start "" "http://localhost:8081/swagger-ui"
+start "" "http://localhost:8081/api/v0/random"
 
 rem --- Cleanup ---
 del /f /q "%TEMP%\*.json" "%CD%\jmeter.log" 2>nul
