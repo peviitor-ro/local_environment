@@ -2,7 +2,13 @@
 # Must be run as Administrator!
 
 $ErrorActionPreference = "Stop"
-$dir = Get-Location
+$dir = $PSScriptRoot
+if (-not $dir) {
+    $dir = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+if (-not $dir) {
+    $dir = (Get-Location).Path
+}
 
 function Is-Administrator {
     $currentUser = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
