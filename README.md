@@ -1,74 +1,84 @@
 # local_environment
-Script to build local environment for peviitor project
+Tools for provisioning local, QA, and specialty environments that mirror the peviitor production stack.
 
-# Windows script
-## Requirements
-- GIT installed
-- Docker installed
-https://docs.docker.com/desktop/install/windows-install/
+## Directory Overview
+- `environments/` — OS and platform specific bootstrap scripts.
+  - `linux-auth/` — Debian/Ubuntu installer with secure Solr defaults and JMeter plans.
+  - `macos-auth/` — macOS automation for the same secure stack.
+  - `windows/` — PowerShell automation that validates WSL2/Podman and prepares Docker images.
+  - `qa/` — Helper scripts for QA reviewers, with and without Solr authentication.
+  - `raspberry-pi/` — Lightweight provisioning scripts for Raspberry Pi OS.
+- `containers/` — Docker build contexts for the Solr, PHP API, and Swagger UI services.
+- `tests/performance/` — Historical load reports and templates for new JMeter runs.
+- `AGENTS.md` — Contributor guidelines and coding conventions.
 
-## Directories
-- linux-local-auth -> local env with SOLR security
-- linux-local -> local env without security
-- qa -> env for QA
+## Prerequisites
+Global tools you will need before running any scripts:
+- Docker Engine or Docker Desktop, depending on the platform.
+- Git CLI for cloning and pulling updates.
+- Java (JDK 11+) for JMeter workloads on Windows.
+- Homebrew (macOS) or apt-based package manager (Linux) for dependency installation.
 
-## How to run:
-How to run the script:
-- Go to the script location
-- Double click on the run.bat script
+> Tip: Each script re-checks its own prerequisites and attempts to install what is missing when possible.
 
-After running the script you can find the peviitor directory here: C:\peviitor
+## Windows Setup
+1. Open PowerShell **as Administrator** and change into this repository.
+2. Run `powershell -ExecutionPolicy Bypass -File environments/windows/run.ps1`.
+   - The script verifies WSL2, installs Podman if needed, and pulls Docker images.
+3. When prompted, provide the Solr username and a strong password (≥15 characters, mixed case, digits, symbol).
+4. After completion, the working stack resides in `C:\peviitor`.
+5. Use `environments/windows/runnew.ps1` when you want a clean reinstall with prerequisite validation.
 
-How to ***repopulate SOLR***:
-- Double click on the data-migration.bat script
+## Linux Setup (Debian/Ubuntu)
+1. `cd environments/linux-auth`
+2. `sudo bash run.sh`
+3. Optionally create swap space when prompted, then supply Solr credentials.
+4. The script installs Docker (if missing), clones the peviitor sources to `/home/<username>/peviitor`, and launches the stack.
+5. Re-run the script whenever you need to rebuild the API (`peviitor/build/api`) or front-end (`peviitor/search-engine`).
 
-## Add `api.env` file in `api` folder
-- Create api.env file with the following structure:
+## macOS Setup
+1. `cd environments/macos-auth`
+2. `bash run.sh`
+3. Ensure Homebrew is installed; the script checks for Docker, Git, and other utilities, then provisions the stack in `~/peviitor`.
 
-`LOCAL_SERVER = <local server>
-PROD_SERVER = <production server>
-SOLR_USER = <solr user>
-SOLR_PASS = <solr password>`
+## Raspberry Pi Setup
+1. `cd environments/raspberry-pi`
+2. `bash run.sh`
+3. After the containers start, seed data by executing the bundled JMeter plans (`migration.jmx`, `firme.jmx`).
 
-# Linux script
-## Requirements
-- GIT installed
-- Docker installed
-https://docs.docker.com/desktop/install/linux/
+## QA Utilities
+- `bash environments/qa/run-auth.sh` — QA stack with Solr authentication enabled.
+- `bash environments/qa/run-no-auth.sh` — QA stack without Solr auth for public endpoints.
+- `bash environments/qa/solr-auth.sh` / `solr-curl-auth.sh` — quick helpers for logging into Solr or testing secured endpoints.
 
-## How to run in terminal:
-Go to the script location.
+## Container Builds
+Rebuild service images whenever you adjust a Dockerfile:
 ```
-sudo bash run.sh
+docker build -t peviitor-solr containers/solr
+docker build -t peviitor-api containers/php-apache
+docker build -t peviitor-swagger containers/swagger-ui
 ```
-After running the script you can find the peviitor directory here
-```
-/home/<your-username>/peviitor
-```
-For ***API*** changes modify inside peviitor/build/api
+Push new image tags to your chosen registry before updating production environments.
 
-For ***FE*** changes modify inside peviitor/search-engine, then rebuild:
-```
-sudo bash rebuild_fe.sh
-```
+## Performance Testing
+- Store new JMeter result files and summaries under `tests/performance/`.
+- Recommended command: `jmeter -n -t environments/linux-auth/migration.jmx -l results.jtl`.
+- Remove large transient logs (`results.jtl`) before committing; keep curated PDFs or Markdown summaries only.
 
-How ***repopulate SOLR***:
+## API Configuration (`api.env`)
+Scripts create `peviitor/build/api`; add the file below with your environment-specific values:
 ```
-sudo bash data-migration.sh
+LOCAL_SERVER=<local server>
+PROD_SERVER=<production server>
+SOLR_SERVER=172.18.0.10:8983
+SOLR_USER=<solr user>
+SOLR_PASS=<solr password>
 ```
-How to ***delete docker containers and docker imagines*** that are created for 
-local_environment:
-```
-sudo bash delete_containers_images_local_env.sh
-```
-## Add `api.env` file in `api` folder
-- Create api.env file with the following structure:
+Never commit real credentials. Share secrets through your preferred vault.
 
-`SOLR_SERVER = 172.18.0.10:8983 
-SOLR_USER = <solr_user>
-SOLR_PASS = <solr_pass>`
-
-# Test the environment in the browser:
-- http://localhost:8983/
-- http://localhost:8080/api/v0/random/
-- http://localhost:8080/
+## Verify Your Environment
+After provisioning, confirm the services respond as expected:
+- `http://localhost:8983/` — Solr Admin UI
+- `http://localhost:8080/api/v0/random/` — API sample endpoint
+- `http://localhost:8080/` — Search front-end
+If anything fails, re-run the platform script and inspect its log output for missing prerequisites or credential issues.
