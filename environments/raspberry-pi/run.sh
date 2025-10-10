@@ -336,8 +336,10 @@ docker run --name apache-container --network mynetwork --ip 172.168.0.11  --rest
 
 
 # Modificarea URL-ului pentru swagger in containerul lui Alex Stefan
-docker exec apache-container sed -i 's|url: "http://localhost:8080/api/v0/swagger.json"|url: "http://localhost:8081/api/v0/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
+sudo docker exec apache-container sed -i 's|url: "http://localhost:8080/api/v0/swagger.json"|url: "http://localhost:8081/api/v0/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
+sudo docker exec apache-container sed -i 's|url: "http://localhost:8081/api/v0/swagger.json"|Curl: "http://zimbor.go.ro:8091/api/v1/swagger.json"|g' /var/www/swagger-ui/swagger-initializer.js
 docker restart apache-container
+
 
 bash "$dir/solr-auth.sh" "$dir" "$solr_user" "$solr_password"
 
