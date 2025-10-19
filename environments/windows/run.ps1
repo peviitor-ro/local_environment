@@ -10,6 +10,8 @@ if (-not $dir) {
     $dir = (Get-Location).Path
 }
 
+$repoRoot = Split-Path -Parent (Split-Path -Parent $dir)
+
 function Is-Administrator {
     $currentUser = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
     return $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
@@ -82,6 +84,117 @@ function Ensure-WSL2 {
 }
 
 Ensure-WSL2
+
+function Initialize-ZookeeperSkeleton {
+    param(
+        [string]$TemplatePath
+    )
+
+    $basePath = Join-Path $env:USERPROFILE "peviitor"
+    $configDir = Join-Path $basePath "config"
+    $dataDir = Join-Path $basePath "zookeeper"
+
+    if (-not (Test-Path $configDir)) {
+        New-Item -ItemType Directory -Path $configDir -Force | Out-Null
+    }
+
+    if ($TemplatePath -and (Test-Path $TemplatePath)) {
+        $targetFile = Join-Path $configDir "zookeeper.env"
+        if (-not (Test-Path $targetFile)) {
+            Copy-Item $TemplatePath $targetFile
+            Write-Host "Created Zookeeper placeholder config at $targetFile"
+        }
+        else {
+            Write-Host "Existing Zookeeper config detected at $targetFile; leaving in place."
+        }
+    }
+
+    foreach ($suffix in @("data", "logs", "certs")) {
+        $path = Join-Path $dataDir $suffix
+        if (-not (Test-Path $path)) {
+            New-Item -ItemType Directory -Path $path -Force | Out-Null
+        }
+    }
+}
+
+function Get-ZookeeperConfig {
+    param(
+        [string]$ConfigPath
+    )
+
+    $config = [ordered]@{
+        Enabled      = $false
+        ConnectString = $null
+        TimeoutMs     = 10000
+        Secure        = $false
+        ClientChroot  = $null
+        SslCa         = $null
+        SslCert       = $null
+        SslKey        = $null
+        CertMount     = Join-Path $env:USERPROFILE "peviitor\zookeeper\certs"
+    }
+
+    if (-not (Test-Path $ConfigPath)) {
+        Write-Host "No Zookeeper configuration found at $ConfigPath; defaulting to standalone Solr."
+        return $config
+    }
+
+    foreach ($line in Get-Content $ConfigPath) {
+        if ($line -match '^\s*#' -or $line -match '^\s*$') { continue }
+        $parts = $line -split '=', 2
+        if ($parts.Count -ne 2) { continue }
+        $key = $parts[0].Trim()
+        $value = $parts[1].Trim()
+
+        switch ($key) {
+            "ZK_ENABLED" { $config.Enabled = $value -match '^(?i:true|1|yes)$' }
+            "ZK_CONNECT_STRING" { $config.ConnectString = $value }
+            "ZK_TIMEOUT_MS" {
+                $parsed = 10000
+                if ([int]::TryParse($value, [ref]$parsed)) {
+                    $config.TimeoutMs = $parsed
+                }
+            }
+            "ZK_SECURE" { $config.Secure = $value -match '^(?i:true|1|yes)$' }
+            "ZK_CLIENT_CHROOT" { $config.ClientChroot = $value }
+            "ZK_SSL_CA_PATH" {
+                if ($value) { $config.SslCa = [System.IO.Path]::GetFileName($value) }
+            }
+            "ZK_SSL_CERT_PATH" {
+                if ($value) { $config.SslCert = [System.IO.Path]::GetFileName($value) }
+            }
+            "ZK_SSL_KEY_PATH" {
+                if ($value) { $config.SslKey = [System.IO.Path]::GetFileName($value) }
+            }
+        }
+    }
+
+    if ($config.Enabled -and $config.ConnectString) {
+        if ($config.ClientChroot -and $config.ConnectString -notmatch [regex]::Escape($config.ClientChroot)) {
+            $config.ConnectString = "$($config.ConnectString)$($config.ClientChroot)"
+        }
+    }
+    else {
+        $config.Enabled = $false
+    }
+
+    return $config
+}
+
+function New-SolrEntity {
+    param(
+        [string]$Container,
+        [string]$Name,
+        [bool]$CloudMode
+    )
+
+    if ($CloudMode) {
+        podman exec $Container bin/solr create -c $Name -n _default -s 1 -rf 1
+    }
+    else {
+        podman exec $Container bin/solr create_core -c $Name
+    }
+}
 
 # --- Install Chocolatey if missing ---
 function Install-Chocolatey {
@@ -272,6 +385,9 @@ if (-not (Test-Path $TARGET_DIR)) {
     New-Item -ItemType Directory -Path $TARGET_DIR | Out-Null
 }
 
+Initialize-ZookeeperSkeleton -TemplatePath (Join-Path $repoRoot "config\zookeeper\zookeeper.env.example")
+$zkConfig = Get-ZookeeperConfig (Join-Path $env:USERPROFILE "peviitor\config\zookeeper.env")
+
 Expand-Archive -Path $TMP_FILE -DestinationPath $TARGET_DIR -Force
 Remove-Item $TMP_FILE
 
@@ -317,18 +433,48 @@ if (-not (Test-Path $solrDataHostPath)) {
     New-Item -ItemType Directory -Path $solrDataHostPath -Force | Out-Null
 }
 
-Write-Host "Starting Solr container on port $SOLR_PORT using Podman..."
-podman run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always `
-    -d -p $SOLR_PORT:$SOLR_PORT `
-    -v "$solrDataHostPath:/var/solr/data:Z" `
-    solr:latest
+$podmanArgs = @(
+    "--name", $CONTAINER_NAME,
+    "--network", "mynetwork",
+    "--ip", "172.168.0.10",
+    "--restart=always",
+    "-d",
+    "-p", "$SOLR_PORT:$SOLR_PORT",
+    "-v", "$solrDataHostPath:/var/solr/data:Z"
+)
+
+$solrCloudMode = $false
+if ($zkConfig.Enabled -and $zkConfig.ConnectString) {
+    Write-Host "Starting Solr container in Cloud mode targeting $($zkConfig.ConnectString)..."
+    $podmanArgs += @("-e", "ZK_HOST=$($zkConfig.ConnectString)", "-e", "SOLR_ZK_TIMEOUT=$($zkConfig.TimeoutMs)")
+    if (Test-Path $zkConfig.CertMount) {
+        $podmanArgs += @("-v", "$($zkConfig.CertMount):/opt/solr/zookeeper:ro")
+    }
+    if ($zkConfig.Secure) {
+        if ($zkConfig.SslCa) { $podmanArgs += @("-e", "ZK_SSL_CA_PATH=/opt/solr/zookeeper/$($zkConfig.SslCa)") }
+        if ($zkConfig.SslCert) { $podmanArgs += @("-e", "ZK_SSL_CERT_PATH=/opt/solr/zookeeper/$($zkConfig.SslCert)") }
+        if ($zkConfig.SslKey) { $podmanArgs += @("-e", "ZK_SSL_KEY_PATH=/opt/solr/zookeeper/$($zkConfig.SslKey)") }
+    }
+    $solrCloudMode = $true
+}
+else {
+    Write-Host "Starting Solr container in standalone mode on port $SOLR_PORT using Podman..."
+}
+
+$podmanArgs += "solr:latest"
+podman run @podmanArgs
 
 Write-Host "Waiting for Solr to start (15 seconds)..."
 Start-Sleep -Seconds 15
 
-Write-Host "Creating Solr cores: $CORE_NAME, $CORE_NAME_2, $CORE_NAME_3"
+$entityLabel = $solrCloudMode ? "collections" : "cores"
+Write-Host "Creating Solr $entityLabel: $CORE_NAME, $CORE_NAME_2, $CORE_NAME_3"
 foreach ($core in @($CORE_NAME, $CORE_NAME_2, $CORE_NAME_3)) {
-    podman exec $CONTAINER_NAME bin/solr create_core -c $core
+    New-SolrEntity -Container $CONTAINER_NAME -Name $core -CloudMode:$solrCloudMode
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to create Solr entity $core"
+        exit 1
+    }
 }
 
 function Invoke-PodmanCurl ($container, $core, $jsonData) {
