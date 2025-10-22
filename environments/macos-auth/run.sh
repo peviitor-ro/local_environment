@@ -1,6 +1,7 @@
 #!/bin/bash
 
 dir=$(pwd)
+repo_root=$(cd "$dir/../.." && pwd)
 
 echo " ================================================================="
 echo " ================= local environment installer ==================="
@@ -186,6 +187,23 @@ echo "Download URL găsit: $DOWNLOAD_URL"
 # Creează folderul țintă dacă nu există
  mkdir -p "$TARGET_DIR"
  chmod -R u+rwx ~/peviitor
+
+ZK_CONFIG_TEMPLATE="$repo_root/config/zookeeper/zookeeper.env.example"
+ZK_CONFIG_DIR="/Users/$username/peviitor/config"
+ZK_DATA_DIR="/Users/$username/peviitor/zookeeper"
+
+if [ -f "$ZK_CONFIG_TEMPLATE" ]; then
+  mkdir -p "$ZK_CONFIG_DIR"
+  if [ ! -f "$ZK_CONFIG_DIR/zookeeper.env" ]; then
+    cp "$ZK_CONFIG_TEMPLATE" "$ZK_CONFIG_DIR/zookeeper.env"
+    chown "$username":"staff" "$ZK_CONFIG_DIR/zookeeper.env" 2>/dev/null || true
+    echo "Created Zookeeper placeholder config at $ZK_CONFIG_DIR/zookeeper.env"
+  else
+    echo "Existing Zookeeper config detected at $ZK_CONFIG_DIR/zookeeper.env; leaving in place."
+  fi
+fi
+
+mkdir -p "$ZK_DATA_DIR/data" "$ZK_DATA_DIR/logs" "$ZK_DATA_DIR/certs"
 
  # Fișier temporar pentru arhivă
 TMP_FILE="/tmp/$ASSET_NAME"

@@ -9,6 +9,7 @@ Tools for provisioning local, QA, and specialty environments that mirror the pev
   - `qa/` — Helper scripts for QA reviewers, with and without Solr authentication.
   - `raspberry-pi/` — Lightweight provisioning scripts for Raspberry Pi OS.
 - `containers/` — Docker build contexts for the Solr, PHP API, and Swagger UI services.
+- `config/zookeeper/` — Templates and documentation for wiring Solr to an external Zookeeper ensemble.
 - `tests/performance/` — Historical load reports and templates for new JMeter runs.
 - `AGENTS.md` — Contributor guidelines and coding conventions.
 
@@ -41,7 +42,7 @@ Global tools you will need before running any scripts:
 2. `bash run.sh`
 3. Ensure Homebrew is installed; the script checks for Docker, Git, and other utilities, then provisions the stack in `~/peviitor`.
 
-## Raspberry Pi Setup
+## Raspberry Pi Setup
 1. `cd environments/raspberry-pi`
 2. `bash run.sh`
 3. After the containers start, seed data by executing the bundled JMeter plans (`migration.jmx`, `firme.jmx`).
@@ -75,6 +76,12 @@ SOLR_USER=<solr user>
 SOLR_PASS=<solr password>
 ```
 Never commit real credentials. Share secrets through your preferred vault.
+
+## Zookeeper Upgrade Prep
+- Provisioners now scaffold `~/peviitor/config/zookeeper.env` plus `~/peviitor/zookeeper/{data,logs,certs}`. Update the generated file when the Zookeeper ensemble is available.
+- Set `ZK_ENABLED=true` and supply the full connect string (append your chroot if required). The installers auto-switch Solr into Cloud mode when the value is present; otherwise they default to standalone.
+- Place TLS materials in `~/peviitor/zookeeper/certs` and reference the filenames in `zookeeper.env`. Certificates remain local and mount read-only into the Solr container when secure mode is enabled.
+- After editing `zookeeper.env`, rerun the platform installer to reconfigure the stack. The remaining manual step is to ensure networking reachability to the Zookeeper servers.
 
 ## Verify Your Environment
 After provisioning, confirm the services respond as expected:

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 dir=$(pwd)
+repo_root=$(cd "$dir/../.." && pwd)
 
 if ! command -v git &> /dev/null
 then
@@ -21,6 +22,25 @@ else
 fi
 
 sudo rm -rf /home/$username/peviitor
+sudo mkdir -p /home/$username/peviitor
+sudo chmod -R 777 /home/$username/peviitor
+
+ZK_CONFIG_TEMPLATE="$repo_root/config/zookeeper/zookeeper.env.example"
+ZK_CONFIG_DIR="/home/$username/peviitor/config"
+ZK_DATA_DIR="/home/$username/peviitor/zookeeper"
+
+if [ -f "$ZK_CONFIG_TEMPLATE" ]; then
+  sudo mkdir -p "$ZK_CONFIG_DIR"
+  if [ ! -f "$ZK_CONFIG_DIR/zookeeper.env" ]; then
+    sudo cp "$ZK_CONFIG_TEMPLATE" "$ZK_CONFIG_DIR/zookeeper.env"
+    sudo chown "$username":"$username" "$ZK_CONFIG_DIR/zookeeper.env"
+    echo "Created Zookeeper placeholder config at $ZK_CONFIG_DIR/zookeeper.env"
+  else
+    echo "Existing Zookeeper config detected at $ZK_CONFIG_DIR/zookeeper.env; leaving in place."
+  fi
+fi
+
+sudo mkdir -p "$ZK_DATA_DIR/data" "$ZK_DATA_DIR/logs" "$ZK_DATA_DIR/certs"
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
