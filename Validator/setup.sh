@@ -18,17 +18,17 @@ if [ -z "$FRONTEND_REPO" ] || [ -z "$BACKEND_REPO" ]; then
 fi
 
 # === CLONARE REPOZITORII ===
-# echo "📥 Clonăm frontend-ul în ./frontend..."
-# git clone "$FRONTEND_REPO" frontend
+echo "📥 Clonăm frontend-ul în ./frontend..."
+git clone "$FRONTEND_REPO" frontend
 
 echo "📥 Clonăm backend-ul în ./backend..."
 git clone "$BACKEND_REPO" backend
 
-# === DOCKERFILE PERSONALIZAT BACKEND ===
-DOCKERFILE="backend/Dockerfile"
+# === DOCKERFILE BACKEND ===
+DOCKERFILE_BACKEND="backend/Dockerfile"
 
-echo "🧱 Suprascriem Dockerfile-ul din backend..."
-cat > "$DOCKERFILE" <<EOF
+echo "🧱 Generăm Dockerfile pentru backend..."
+cat > "$DOCKERFILE_BACKEND" <<EOF
 FROM python:3.10-slim
 
 WORKDIR /app
@@ -46,7 +46,27 @@ EXPOSE 8000
 CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
 EOF
 
-echo "✅ Dockerfile backend actualizat."
+echo "✅ Dockerfile backend creat."
+
+# === DOCKERFILE FRONTEND ===
+DOCKERFILE_FRONTEND="frontend/validator-ui/Dockerfile"
+
+echo "🧱 Generăm Dockerfile pentru frontend..."
+cat > "$DOCKERFILE_FRONTEND" <<EOF
+FROM node:23.5.0
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npx", "vite"]
+EOF
 
 # === PORNIRE CU DOCKER-COMPOSE ===
 echo "🚀 Pornim aplicația cu Docker Compose..."
@@ -54,4 +74,4 @@ docker-compose up --build -d
 
 echo "🎉 Setup complet:"
 echo "🔹 Backend: http://localhost:8000"
-# echo "🔹 Frontend: http://localhost:3000"
+echo "🔹 Frontend: http://localhost:3000"
