@@ -47,6 +47,26 @@ Global tools you will need before running any scripts:
 2. `bash run.sh`
 3. After the containers start, seed data by executing the bundled JMeter plans (`migration.jmx`, `firme.jmx`).
 
+## Validator Setup
+The validator setup automates the deployment of frontend and backend validation services using Docker Compose.
+
+### Prerequisites
+- Docker Engine or Docker Desktop
+- Git CLI
+- Configured `.env` file in the `Validator/` directory with repository URLs
+
+### Linux / macOS
+1. `cd Validator`
+2. `./setup.sh`
+
+### Windows
+1. Open Command Prompt or PowerShell in the `Validator` directory
+2. `setup.bat`
+
+After completion, the validator services will be available at:
+- Backend: http://localhost:8000
+- Frontend: http://localhost:3000
+
 ## QA Utilities
 - `bash environments/qa/run-auth.sh` — QA stack with Solr authentication enabled.
 - `bash environments/qa/run-no-auth.sh` — QA stack without Solr auth for public endpoints.
