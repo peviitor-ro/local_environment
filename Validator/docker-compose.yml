@@ -15,9 +15,7 @@ services:
       - "5432:5432"
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: gidoiualexandru/validator-backend:latest
     container_name: django_app
     command: >
       sh -c "python manage.py migrate &&
@@ -35,9 +33,7 @@ services:
       - db
 
   frontend:
-    build:
-      context: ./frontend/validator-ui
-      dockerfile: Dockerfile
+    image: gidoiualexandru/validator-frontend:latest
     container_name: validator_ui
     ports:
       - "3000:3000"
