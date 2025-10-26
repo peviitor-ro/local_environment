@@ -5,7 +5,7 @@ set -e
 # This script sets up the local development environment for the Validator project.
 # It clones the required repositories and starts the application using Docker Compose.
 
-COMPOSE_FILE="local_environment/Validator/docker-compose.yml"
+COMPOSE_FILE="../docker-compose.yml"
 
 # === CHECK PREREQUISITES ===
 if ! command -v git &> /dev/null; then
@@ -13,7 +13,7 @@ if ! command -v git &> /dev/null; then
     exit 1
 fi
 
-if ! command -v docker-compose &> /dev/null; then
+if ! command -v docker compose &> /dev/null; then
     echo "[ERROR] Docker Compose is not installed or Docker is not running. Please start Docker and try again."
     exit 1
 fi
@@ -74,11 +74,11 @@ git clone "$BACKEND_REPO" backend || {
 # === STARTING THE APPLICATION ===
 echo ""
 echo "[INFO] Pulling the latest images from Docker Hub..."
-docker-compose --project-directory . -f "$COMPOSE_FILE" pull
+docker compose --project-directory . -f "$COMPOSE_FILE" pull
 
 echo ""
 echo "[INFO] Starting the application with Docker Compose..."
-docker-compose --project-directory . -f "$COMPOSE_FILE" up -d
+docker compose --project-directory . -f "$COMPOSE_FILE" up -d
 
 echo ""
 echo "================================================================="
