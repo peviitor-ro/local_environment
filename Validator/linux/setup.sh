@@ -32,45 +32,6 @@ fi
 echo "Loading variables from .env..."
 export $(grep -v '^#' .env | xargs)
 
-# === VALIDATE VARIABLES ===
-if [ -z "$FRONTEND_REPO" ]; then
-    echo "[ERROR] FRONTEND_REPO is not defined in your .env file."
-    exit 1
-fi
-if [ -z "$BACKEND_REPO" ]; then
-    echo "[ERROR] BACKEND_REPO is not defined in your .env file."
-    exit 1
-fi
-if [ -z "$POSTGRES_PASSWORD" ]; then
-    echo "[ERROR] POSTGRES_PASSWORD is not defined in your .env file."
-    echo "Please ensure all database credentials are set."
-    exit 1
-fi
-
-# === CLEANUP AND CLONE REPOS ===
-if [ -d "frontend" ]; then
-    echo "[INFO] Removing existing 'frontend' directory..."
-    rm -rf "frontend"
-fi
-if [ -d "backend" ]; then
-    echo "[INFO] Removing existing 'backend' directory..."
-    rm -rf "backend"
-fi
-
-echo ""
-echo "[INFO] Cloning frontend repository..."
-git clone "$FRONTEND_REPO" frontend || {
-    echo "[ERROR] Failed to clone the frontend repository. Please check the URL in your .env file."
-    exit 1
-}
-
-echo ""
-echo "[INFO] Cloning backend repository..."
-git clone "$BACKEND_REPO" backend || {
-    echo "[ERROR] Failed to clone the backend repository. Please check the URL in your .env file."
-    exit 1
-}
-
 # === STARTING THE APPLICATION ===
 echo ""
 echo "[INFO] Pulling the latest images from Docker Hub..."

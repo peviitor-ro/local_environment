@@ -3,6 +3,7 @@ version: '3.9'
 services:
   db:
     image: postgres:16
+    platform: linux/amd64
     container_name: postgres_db
     restart: always
     environment:
@@ -16,6 +17,7 @@ services:
 
   backend:
     image: gidoiualexandru/validator-backend:latest
+    platform: linux/amd64
     container_name: django_app
     command: >
       sh -c "python manage.py migrate &&
@@ -34,7 +36,12 @@ services:
 
   frontend:
     image: gidoiualexandru/validator-frontend:latest
+    platform: linux/amd64
     container_name: validator_ui
+    environment:
+      - VITE_BASE_URL=${VITE_BASE_URL}
+      - VITE_BASE_WS_URL=${VITE_BASE_WS_URL}
+      - VITE_RECAPTCHA_KEY=${VITE_RECAPTCHA_KEY}
     ports:
       - "3000:3000"
     depends_on:
