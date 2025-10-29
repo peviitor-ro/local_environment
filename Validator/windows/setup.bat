@@ -1,10 +1,12 @@
 @echo off
 setlocal
 
+for %%I in ("%~dp0..") do set "ROOT_DIR=%%~fI"
+set "COMPOSE_FILE=%ROOT_DIR%\docker-compose.yml"
+set "ENV_FILE=%ROOT_DIR%\.env"
+
 REM This script sets up the local development environment for the Validator project.
 REM It clones the required repositories and starts the application using Docker Compose.
-
-set COMPOSE_FILE=..\docker-compose.yml
 
 REM === CHECK PREREQUISITES ===
 git --version >nul 2>&1
@@ -24,10 +26,11 @@ if %errorlevel% neq 0 (
 )
 
 REM === CHECK FOR .env FILE ===
-if not exist ".env" (
+if not exist "%ENV_FILE%" (
     echo [ERROR] The .env file is missing.
     echo.
     echo Please copy the 'env.example' file to a new file named '.env'
+    echo Place the file in the 'local_environment\Validator' directory.
     echo Then, open the '.env' file and fill in your actual secret values.
     echo.
     pause
@@ -36,7 +39,7 @@ if not exist ".env" (
 
 REM === LOAD ENV ===
 echo "Loading variables from .env..."
-for /f "delims=" %%a in ('type ".env" ^| findstr /v "^#"') do set "%%a"
+for /f "delims=" %%a in ('type "%ENV_FILE%" ^| findstr /v "^#"') do set "%%a"
 
 REM === VALIDATE VARIABLES ===
 if not defined FRONTEND_REPO (
@@ -57,6 +60,7 @@ if not defined POSTGRES_PASSWORD (
 )
 
 REM === CLEANUP AND CLONE REPOS ===
+pushd "%ROOT_DIR%" >nul
 if exist "frontend" (
     echo [INFO] Removing existing 'frontend' directory...
     rmdir /s /q "frontend"
@@ -70,6 +74,7 @@ echo.
 echo [INFO] Cloning frontend repository...
 git clone "%FRONTEND_REPO%" frontend || (
     echo [ERROR] Failed to clone the frontend repository. Please check the URL in your .env file.
+    popd >nul
     pause
     goto :eof
 )
@@ -78,10 +83,19 @@ echo.
 echo [INFO] Cloning backend repository...
 git clone "%BACKEND_REPO%" backend || (
     echo [ERROR] Failed to clone the backend repository. Please check the URL in your .env file.
+    popd >nul
     pause
     goto :eof
 )
 
+REM === CREATE FRONTEND .env FILE ===
+echo.
+echo [INFO] Creating frontend .env file...
+(
+    echo # Frontend environment variables for Vite
+    echo # Backend API URL
+    echo VITE_BASE_URL=http://localhost:8000
+) > frontend\validator-ui\.env
 
 REM === STARTING THE APPLICATION ===
 echo.
@@ -91,6 +105,7 @@ docker-compose --project-directory . -f "%COMPOSE_FILE%" pull
 echo.
 echo [INFO] Starting the application with Docker Compose...
 docker-compose --project-directory . -f "%COMPOSE_FILE%" up -d
+popd >nul
 
 echo.
 echo =================================================================

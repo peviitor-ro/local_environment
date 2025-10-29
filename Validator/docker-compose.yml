@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:16
@@ -17,6 +15,7 @@ services:
   backend:
     image: gidoiualexandru/validator-backend:latest
     container_name: django_app
+    working_dir: /app/scraper_Api
     command: >
       sh -c "python manage.py migrate &&
               python manage.py collectstatic --noinput &&
@@ -35,6 +34,9 @@ services:
   frontend:
     image: gidoiualexandru/validator-frontend:latest
     container_name: validator_ui
+    volumes:
+      - ./frontend/validator-ui:/app
+      - /app/node_modules
     ports:
       - "3000:3000"
     depends_on:

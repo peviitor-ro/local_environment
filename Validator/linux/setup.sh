@@ -5,7 +5,10 @@ set -e
 # This script sets up the local development environment for the Validator project.
 # It clones the required repositories and starts the application using Docker Compose.
 
-COMPOSE_FILE="../docker-compose.yml"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+COMPOSE_FILE="$ROOT_DIR/docker-compose.yml"
+ENV_FILE="$ROOT_DIR/.env"
 
 # === CHECK PREREQUISITES ===
 if ! command -v git &> /dev/null; then
@@ -19,10 +22,11 @@ if ! command -v docker compose &> /dev/null; then
 fi
 
 # === CHECK FOR .env FILE ===
-if [ ! -f ".env" ]; then
+if [ ! -f "$ENV_FILE" ]; then
     echo "[ERROR] The .env file is missing."
     echo ""
     echo "Please copy the 'env.example' file to a new file named '.env'"
+    echo "Place the file in the 'local_environment/Validator' directory."
     echo "Then, open the '.env' file and fill in your actual secret values."
     echo ""
     exit 1
@@ -30,7 +34,7 @@ fi
 
 # === LOAD ENV ===
 echo "Loading variables from .env..."
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' "$ENV_FILE" | xargs)
 
 # === VALIDATE VARIABLES ===
 if [ -z "$FRONTEND_REPO" ]; then
@@ -48,6 +52,8 @@ if [ -z "$POSTGRES_PASSWORD" ]; then
 fi
 
 # === CLEANUP AND CLONE REPOS ===
+cd "$ROOT_DIR"
+
 if [ -d "frontend" ]; then
     echo "[INFO] Removing existing 'frontend' directory..."
     rm -rf "frontend"
@@ -71,6 +77,15 @@ git clone "$BACKEND_REPO" backend || {
     exit 1
 }
 
+# === CREATE FRONTEND .env FILE ===
+echo ""
+echo "[INFO] Creating frontend .env file..."
+cat > frontend/validator-ui/.env << 'EOF'
+# Frontend environment variables for Vite
+# Backend API URL
+VITE_BASE_URL=http://localhost:8000
+EOF
+
 # === STARTING THE APPLICATION ===
 echo ""
 echo "[INFO] Pulling the latest images from Docker Hub..."
@@ -89,5 +104,5 @@ echo "The application is now running in the background."
 echo "   - Backend should be available at http://localhost:8000"
 echo "   - Frontend should be available at http://localhost:3000"
 echo ""
-echo "To stop the application, run 'docker-compose --project-directory . -f \"$COMPOSE_FILE\" down'"
+echo "To stop the application, run 'docker compose --project-directory . -f \"$COMPOSE_FILE\" down'"
 echo ""
