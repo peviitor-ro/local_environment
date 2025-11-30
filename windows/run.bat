@@ -158,7 +158,9 @@ rem Temporary default values until security.json is implemented
 set "SOLR_USER=solr"
 set "SOLR_PASS=solrRocks"
 
-if exist "%PEVIITOR_DIR%" rmdir /s /q "%PEVIITOR_DIR%"
+if exist "%PEVIITOR_DIR%" (
+    %POWERSHELL% -NoProfile -Command "$path='%PEVIITOR_DIR%'; if (Test-Path $path) { $ts=Get-Date -Format 'yyyyMMddHHmmss'; Move-Item -Path $path -Destination \"$path.backup.$ts\" -Force }"
+)
 
 rem --- Clean containers and network ---
 echo Cleaning up containers...
@@ -172,7 +174,7 @@ for /f "delims=" %%N in ('podman network ls --format "{{.Name}}" 2^>nul') do (
     if "%%N"=="mynetwork" podman network rm mynetwork >nul 2>&1
 )
 
-call :run_with_log "podman network create --subnet=172.168.0.0/16 mynetwork" "network_create" "Failed to create network"
+call :run_with_log "podman network create --subnet=172.18.0.0/16 mynetwork" "network_create" "Failed to create network"
 
 rem --- Download and setup project ---
 echo Downloading latest build...
@@ -193,7 +195,7 @@ git clone --depth 1 --branch master --single-branch https://github.com/peviitor-
 
 rem --- Create API config ---
 (
-    echo LOCAL_SERVER = 172.168.0.10:8983
+    echo LOCAL_SERVER = 172.18.0.10:8983
     echo PROD_SERVER = zimbor.go.ro
     echo BACK_SERVER = https://api.laurentiumarian.ro/
     rem TODO: Remove these hardcoded credentials when security.json is implemented
@@ -208,7 +210,7 @@ rem Apache setup
 set "APACHE_DOCROOT=%PEVIITOR_DIR%\build"
 if exist "%PEVIITOR_DIR%\build\build\index.html" set "APACHE_DOCROOT=%PEVIITOR_DIR%\build\build"
 
-podman run --name apache-container --network mynetwork --ip 172.168.0.11 --restart=always -d -p 8081:80 -v "%APACHE_DOCROOT%:/var/www/html" alexstefan1702/php-apache >"%TEMP%\apache_start.log" 2>&1
+podman run --name apache-container --network mynetwork --ip 172.18.0.11 --restart=always -d -p 8081:80 -v "%APACHE_DOCROOT%:/var/www/html" alexstefan1702/php-apache >"%TEMP%\apache_start.log" 2>&1
 if errorlevel 1 call :handle_error "Failed to start Apache container" "%TEMP%\apache_start.log"
 del "%TEMP%\apache_start.log" 2>nul
 
@@ -217,7 +219,7 @@ podman restart apache-container >nul 2>&1
 
 rem Solr setup
 rem TODO: Remove -InitUser and -InitPass parameters when security.json is implemented
-%POWERSHELL% "& '%~dp0configure-solr.ps1' -NetworkName 'mynetwork' -SolrContainerName 'solr-container' -SolrIp '172.168.0.10' -SolrPort %SOLR_PORT% -AuthCore 'auth' -JobsCore 'jobs' -LogoCore 'logo' -FirmeCore 'firme' -InitUser '%SOLR_USER%' -InitPass '%SOLR_PASS%'"
+%POWERSHELL% "& '%~dp0configure-solr.ps1' -NetworkName 'mynetwork' -SolrContainerName 'solr-container' -SolrIp '172.18.0.10' -SolrPort %SOLR_PORT% -AuthCore 'auth' -JobsCore 'jobs' -LogoCore 'logo' -FirmeCore 'firme' -InitUser '%SOLR_USER%' -InitPass '%SOLR_PASS%'"
 if errorlevel 1 call :handle_error "Solr configuration failed"
 
 rem --- Install Java and JMeter ---

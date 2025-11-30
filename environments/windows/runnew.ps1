@@ -220,9 +220,9 @@ Read-Host "`nPress Enter to continue"
 # Clear variables
 $peviitor_dir = "C:\peviitor"
 $network_name = "mynetwork"
-$subnet = "172.168.0.0/16"
-$solr_ip = "172.168.0.10"
-$apache_ip = "172.168.0.11"
+$subnet = "172.18.0.0/16"
+$solr_ip = "172.18.0.10"
+$apache_ip = "172.18.0.11"
 $solr_port = "8983"
 $apache_port = "8080"
 
@@ -273,8 +273,10 @@ try {
 # Create peviitor directory
 Write-Host "Creating peviitor directory..." -ForegroundColor Gray
 if (Test-Path $peviitor_dir) {
-    Write-Host "Removing existing peviitor directory..." -ForegroundColor Yellow
-    Remove-Item $peviitor_dir -Recurse -Force
+    $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+    $backupDir = "$peviitor_dir.backup.$timestamp"
+    Write-Host "Existing peviitor directory detected; moving to $backupDir" -ForegroundColor Yellow
+    Move-Item -Path $peviitor_dir -Destination $backupDir -Force
 }
 New-Item -ItemType Directory -Path $peviitor_dir -Force | Out-Null
 Write-Host "Directory created: $peviitor_dir" -ForegroundColor Green
@@ -800,8 +802,8 @@ Write-Host "  Swagger UI: http://localhost:8081/swagger-ui/"
 Write-Host "`nIMPORTANT" -ForegroundColor Yellow
 Write-Host "  - Website ready with test data at: http://localhost:8081"
 Write-Host "  - To import real production data:"
-Write-Host "    1. Edit migration.jmx: Change 172.168.0.10 to localhost"
-Write-Host "    2. Edit firme.jmx: Change 172.168.0.10 to localhost"
+Write-Host "    1. Edit migration.jmx: Change 172.18.0.10 to localhost"
+Write-Host "    2. Edit firme.jmx: Change 172.18.0.10 to localhost"
 Write-Host "    3. Run: jmeter -n -t migration.jmx"
 Write-Host "    4. Run: jmeter -n -t firme.jmx"
 

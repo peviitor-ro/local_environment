@@ -21,9 +21,15 @@ else
     username=$USER
 fi
 
-sudo rm -rf /home/$username/peviitor
-sudo mkdir -p /home/$username/peviitor
-sudo chmod -R 777 /home/$username/peviitor
+install_root="/home/$username/peviitor"
+if [ -d "$install_root" ]; then
+    backup_dir="${install_root}_backup_$(date +%Y%m%d%H%M%S)"
+    echo "Existing $install_root detected; moving to $backup_dir instead of deleting."
+    sudo mv "$install_root" "$backup_dir"
+fi
+sudo mkdir -p "$install_root"
+sudo chown -R "$username":"$username" "$install_root"
+sudo chmod 755 "$install_root"
 
 ZK_CONFIG_TEMPLATE="$repo_root/config/zookeeper/zookeeper.env.example"
 ZK_CONFIG_DIR="/home/$username/peviitor/config"

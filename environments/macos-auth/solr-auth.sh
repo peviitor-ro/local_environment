@@ -8,6 +8,11 @@ else
     username=$USER
 fi
 
+SOLR_DATA_DIR="/Users/$username/peviitor/solr/core/data"
+sudo mkdir -p "$SOLR_DATA_DIR"
+sudo chown -R 8983:8983 "$SOLR_DATA_DIR"
+sudo chmod -R 775 "$SOLR_DATA_DIR"
+
 CORE_NAME=auth
 CORE_NAME_2=jobs
 CORE_NAME_3=logo
@@ -18,13 +23,11 @@ SECURITY_FILE="security.json"
 
 # Start Solr container
 echo " --> starting Solr container...on port $SOLR_PORT"
-docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
+docker run --name $CONTAINER_NAME --network mynetwork --ip 172.18.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /Users/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
 echo "Waiting for Solr to start..."
 sleep 10
-
-chmod -R 777 /Users/$username/peviitor
 
 # Create Solr cores
 echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2 and $CORE_NAME_3"
@@ -371,10 +374,9 @@ docker cp $SECURITY_FILE $CONTAINER_NAME:/var/solr/data/security.json
 docker restart $CONTAINER_NAME
 echo " --> $CONTAINER_NAME restarted. It is ready for authentication"
 
- #chown -R 8983:8983 /Users/$username/peviitor/solr/core/data
- chmod -R u+rwX /Users/$username/peviitor/solr/core/data
- chmod -R 777 /Users/$username/peviitor/solr/core/data
- docker restart $CONTAINER_NAME
+sudo chown -R 8983:8983 "$SOLR_DATA_DIR"
+sudo chmod -R 775 "$SOLR_DATA_DIR"
+docker restart $CONTAINER_NAME
 
 # Check if Java is installed
 if type -p java > /dev/null; then
@@ -446,8 +448,7 @@ curl -L -o cmdrunner-2.3.jar https://repo1.maven.org/maven2/kg/apc/cmdrunner/2.3
 fi
 
 # Set permissions (if needed)
- 
- chmod -R 777 "$JMETER_PATH"
+chmod -R 755 "$JMETER_PATH"
 
 
 
@@ -511,4 +512,3 @@ echo " ================================================================="
 echo " ===================== enjoy local environment ==================="
 echo " ====================== peviitor.ro =============================="
 echo " ================================================================="
-

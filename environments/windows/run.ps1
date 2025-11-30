@@ -299,7 +299,7 @@ function Validate-Password($password) {
     $hasUpper = $password -match '[A-Z]'
     $hasDigit = $password -match '\d'
     $hasSpecial = $password -match '[!@#$%^&*_\-\[\]\(\)]'
-    return ($lengthValid -or ($hasLower -and $hasUpper -and $hasDigit -and $hasSpecial))
+    return ($lengthValid -and $hasLower -and $hasUpper -and $hasDigit -and $hasSpecial)
 }
 
 Write-Host " ================================================================="
@@ -324,7 +324,7 @@ while ($true) {
         Write-Host "Password accepted."
         break
     } else {
-        Write-Warning "Password must be at least 15 characters OR contain lowercase, uppercase, digit, and special (!@#$%^&*_-[]()). Please try again."
+        Write-Warning "Password must be at least 15 characters and include lowercase, uppercase, digit, and special (!@#$%^&*_-[]()). Please try again."
     }
 }
 
@@ -337,9 +337,12 @@ Write-Host "You entered password: [hidden]"
 
 $peviitorPath = "$env:USERPROFILE\peviitor"
 if (Test-Path $peviitorPath) {
-    Write-Host "Removing existing peviitor folder..."
-    Remove-Item -Recurse -Force $peviitorPath
+    $timestamp = Get-Date -Format "yyyyMMddHHmmss"
+    $backupPath = "$peviitorPath.backup.$timestamp"
+    Write-Host "Existing peviitor folder detected; moving to $backupPath instead of deleting."
+    Move-Item -Path $peviitorPath -Destination $backupPath -Force
 }
+New-Item -ItemType Directory -Path $peviitorPath -Force | Out-Null
 
 $containers = "apache-container", "solr-container", "data-migration", "deploy-fe"
 foreach ($container in $containers) {
@@ -358,8 +361,8 @@ if ($networks -contains $network) {
     podman network rm $network | Out-Null
 }
 
-Write-Host "Creating network $network with subnet 172.168.0.0/16..."
-podman network create --subnet=172.168.0.0/16 $network | Out-Null
+Write-Host "Creating network $network with subnet 172.18.0.0/16..."
+podman network create --subnet=172.18.0.0/16 $network | Out-Null
 
 $REPO = "peviitor-ro/search-engine"
 $ASSET_NAME = "build.zip"
@@ -401,7 +404,7 @@ Write-Host "Cloning API repo to $TARGET_DIR\build\api"
 git clone --depth 1 --branch master --single-branch https://github.com/peviitor-ro/api.git "$TARGET_DIR\build\api"
 
 $envContent = @"
-LOCAL_SERVER = 172.168.0.10:8983
+LOCAL_SERVER = 172.18.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
 SOLR_USER = $solr_user
@@ -413,7 +416,7 @@ Write-Host "Creating api.env file at $envPath"
 $envContent | Set-Content -Path $envPath -Force
 
 Write-Host "Starting apache-container with Podman..."
-podman run --name apache-container --network mynetwork --ip 172.168.0.11 --restart=always -d -p 8081:80 `
+podman run --name apache-container --network mynetwork --ip 172.18.0.11 --restart=always -d -p 8081:80 `
     -v "$TARGET_DIR\build:/var/www/html" alexstefan1702/php-apache
 
 Write-Host "Updating swagger-ui URL inside apache-container..."
@@ -436,7 +439,7 @@ if (-not (Test-Path $solrDataHostPath)) {
 $podmanArgs = @(
     "--name", $CONTAINER_NAME,
     "--network", "mynetwork",
-    "--ip", "172.168.0.10",
+    "--ip", "172.18.0.10",
     "--restart=always",
     "-d",
     "-p", "$SOLR_PORT:$SOLR_PORT",
