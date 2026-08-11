@@ -57,27 +57,19 @@ fi
 validate_password() {
   local password="$1"
 
-  # Check length >= 15
-  if [ ${#password} -ge 15 ]; then
-    return 0
+  # Require length >= 15 and all character classes
+  if [ ${#password} -lt 15 ]; then
+    return 1
   fi
-
-  # Check for lowercase letter
   if ! [[ $password =~ [a-z] ]]; then
     return 1
   fi
-
-  # Check for uppercase letter
   if ! [[ $password =~ [A-Z] ]]; then
     return 1
   fi
-
-  # Check for digit
   if ! [[ $password =~ [0-9] ]]; then
     return 1
   fi
-
-  # Check for special character from the set !@#$%^&*_-[]()
   if ! [[ $password =~ [\!\@\#\$\%\^\&\*\_\-\[\]\(\)] ]]; then
     return 1
   fi
@@ -94,7 +86,7 @@ while true; do
     echo -e "\n[~] Password accepted."
     break
   else
-    echo -e "\n[~] Password must be strong. Try again!"
+    echo -e "\n[~] Password must be at least 15 characters and include lowercase, uppercase, digit, and special (!@#$%^&*_-[]()). Try again!"
   fi
 done
 
@@ -234,7 +226,15 @@ else
     username=$USER
 fi
 
-sudo rm -rf /home/$username/peviitor
+install_root="/home/$username/peviitor"
+if [ -d "$install_root" ]; then
+    backup_dir="${install_root}_backup_$(date +%Y%m%d%H%M%S)"
+    echo "Existing $install_root detected; moving to $backup_dir instead of deleting."
+    sudo mv "$install_root" "$backup_dir"
+fi
+sudo mkdir -p "$install_root"
+sudo chown -R "$username":"$username" "$install_root"
+sudo chmod 755 "$install_root"
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
@@ -255,7 +255,7 @@ fi
 
 # Creează rețeaua nouă
 echo "Creating network $network..."
-docker network create --subnet=172.168.0.0/16 $network
+docker network create --subnet=172.18.0.0/16 $network
 
 #echo " --> cloning repo from https://github.com/peviitor-ro/search-engine.git"
 #git clone --depth 1 --branch main --single-branch https://github.com/peviitor-ro/search-engine.git /home/$username/peviitor/search-engine
@@ -337,8 +337,8 @@ git clone --depth 1 --branch master --single-branch https://github.com/peviitor-
 echo " --> creating api.env file for API"
 API_ENV_FILE="/home/$username/peviitor/build/api/api.env"
 if [ ! -f "$API_ENV_FILE" ]; then
-  cat > "$API_ENV_FILE" <<EOF
-LOCAL_SERVER = 172.168.0.10:8983
+cat > "$API_ENV_FILE" <<EOF
+LOCAL_SERVER = 172.18.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
 SOLR_USER = $solr_user
@@ -349,7 +349,7 @@ else
 fi
 
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
-docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
+docker run --name apache-container --network mynetwork --ip 172.18.0.11  --restart=always -d -p 8081:80 \
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache
 
 

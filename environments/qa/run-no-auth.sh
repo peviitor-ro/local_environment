@@ -18,7 +18,15 @@ else
     username=$USER
 fi
 
-sudo rm -rf /home/$username/peviitor
+install_root="/home/$username/peviitor"
+if [ -d "$install_root" ]; then
+    backup_dir="${install_root}_backup_$(date +%Y%m%d%H%M%S)"
+    echo "Existing $install_root detected; moving to $backup_dir instead of deleting."
+    sudo mv "$install_root" "$backup_dir"
+fi
+sudo mkdir -p "$install_root"
+sudo chown -R "$username":"$username" "$install_root"
+sudo chmod 755 "$install_root"
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
@@ -48,7 +56,9 @@ docker run --name apache-container --network mynetwork --ip 172.18.0.11 -d -p 80
     -v /home/$username/peviitor/build:/var/www/html alexstefan1702/php-apache-qa
 
 git clone https://github.com/peviitor-ro/solr2.git /home/$username/peviitor/solr
-sudo chmod -R 777 /home/$username/peviitor
+SOLR_DATA_DIR="/home/$username/peviitor/solr/core/data"
+sudo chown -R 8983:8983 "$SOLR_DATA_DIR"
+sudo chmod -R 775 "$SOLR_DATA_DIR"
 docker run --name solr-container --network mynetwork --ip 172.18.0.10 -d -p 8983:8983 \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 

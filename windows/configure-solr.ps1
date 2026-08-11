@@ -5,7 +5,7 @@ param(
     [string]$NetworkName = "mynetwork",
     [string]$SolrContainerName = "solr-container",
     [string]$SolrImage = "solr:latest",
-    [string]$SolrIp = "172.168.0.10",
+    [string]$SolrIp = "172.18.0.10",
     [int]$SolrPort = 8983,
     [string]$AuthCore = "auth",
     [string]$JobsCore = "jobs",

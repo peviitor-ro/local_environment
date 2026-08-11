@@ -6,6 +6,11 @@ else
     username=$USER
 fi
 
+SOLR_DATA_DIR="/home/$username/peviitor/solr/core/data"
+sudo mkdir -p "$SOLR_DATA_DIR"
+sudo chown -R 8983:8983 "$SOLR_DATA_DIR"
+sudo chmod -R 775 "$SOLR_DATA_DIR"
+
 ZK_CONFIG_FILE="/home/$username/peviitor/config/zookeeper.env"
 ZK_ENABLED_VALUE="false"
 ZK_CONNECT_STRING=""
@@ -88,8 +93,6 @@ docker run "${SOLR_DOCKER_OPTS[@]}" solr:latest
 
 echo "Waiting for Solr to start..."
 sleep 10
-
-sudo chmod -R 777 /home/$username/peviitor
 
 create_solr_entity() {
   local collection="$1"

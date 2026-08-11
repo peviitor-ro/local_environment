@@ -1,91 +1,48 @@
 # local_environment
-Tools for provisioning local, QA, and specialty environments that mirror the peviitor production stack.
+Scripts and Docker build contexts that spin up the peviitor stack locally for development, QA, or demos.
 
-## Directory Overview
-- `environments/` — OS and platform specific bootstrap scripts.
-  - `linux-auth/` — Debian/Ubuntu installer with secure Solr defaults and JMeter plans.
-  - `macos-auth/` — macOS automation for the same secure stack.
-  - `windows/` — PowerShell automation that validates WSL2/Podman and prepares Docker images.
-  - `qa/` — Helper scripts for QA reviewers, with and without Solr authentication.
-  - `raspberry-pi/` — Lightweight provisioning scripts for Raspberry Pi OS.
-- `containers/` — Docker build contexts for the Solr, PHP API, and Swagger UI services.
-- `config/zookeeper/` — Templates and documentation for wiring Solr to an external Zookeeper ensemble.
-- `tests/performance/` — Historical load reports and templates for new JMeter runs.
-- `AGENTS.md` — Contributor guidelines and coding conventions.
+## What’s inside
+- `environments/` — one-click installers by platform (`linux-auth/`, `macos-auth/`, `windows/`, `qa/`, `raspberry-pi/`).
+- `containers/` — Dockerfiles for Solr, PHP API, and Swagger UI.
+- `config/zookeeper/` — sample config for Solr Cloud.
+- `tests/performance/` — JMeter plans and archived reports.
+- `AGENTS.md` — contributor guide.
 
-## Prerequisites
-Global tools you will need before running any scripts:
-- Docker Engine or Docker Desktop, depending on the platform.
-- Git CLI for cloning and pulling updates.
-- Java (JDK 11+) for JMeter workloads on Windows.
-- Homebrew (macOS) or apt-based package manager (Linux) for dependency installation.
+## Before you start
+- Docker Desktop (Windows/macOS) or Docker Engine + Compose plugin (Linux).
+- Git CLI.
+- Java 11+ only if you plan to run JMeter.
+- Stable internet to pull images and release artifacts.
 
-> Tip: Each script re-checks its own prerequisites and attempts to install what is missing when possible.
+## Quick start by OS
+- **Windows (PowerShell as Administrator)**  
+  `powershell -ExecutionPolicy Bypass -File environments/windows/run.ps1`  
+  The script checks WSL2/Podman, downloads the latest `build.zip`, and starts Solr + API + front-end under `C:\peviitor`. Provide a Solr password with at least 15 characters including lower/upper/digit/symbol.
+- **Linux (Debian/Ubuntu)**  
+  `cd environments/linux-auth && sudo bash run.sh`  
+  Creates `/home/<user>/peviitor`, builds/starts containers, and seeds configs. Existing folders are backed up with a timestamp.
+- **macOS**  
+  `cd environments/macos-auth && bash run.sh`  
+  Requires Homebrew; the script waits for Docker Desktop and provisions `~/peviitor`.
+- **Raspberry Pi**  
+  `cd environments/raspberry-pi && bash run.sh`  
+  Uses the same Solr/API/front-end stack with lighter defaults.
+- **QA helpers**  
+  `bash environments/qa/run-auth.sh` (with Solr auth) or `run-no-auth.sh` (without).
 
-## Windows Setup
-1. Open PowerShell **as Administrator** and change into this repository.
-2. Run `powershell -ExecutionPolicy Bypass -File environments/windows/run.ps1`.
-   - The script verifies WSL2, installs Podman if needed, and pulls Docker images.
-3. When prompted, provide the Solr username and a strong password (≥15 characters, mixed case, digits, symbol).
-4. After completion, the working stack resides in `C:\peviitor`.
-5. Use `environments/windows/runnew.ps1` when you want a clean reinstall with prerequisite validation.
-
-## Linux Setup (Debian/Ubuntu)
-1. `cd environments/linux-auth`
-2. `sudo bash run.sh`
-3. Optionally create swap space when prompted, then supply Solr credentials.
-4. The script installs Docker (if missing), clones the peviitor sources to `/home/<username>/peviitor`, and launches the stack.
-5. Re-run the script whenever you need to rebuild the API (`peviitor/build/api`) or front-end (`peviitor/search-engine`).
-
-## macOS Setup
-1. `cd environments/macos-auth`
-2. `bash run.sh`
-3. Ensure Homebrew is installed; the script checks for Docker, Git, and other utilities, then provisions the stack in `~/peviitor`.
-
-## Raspberry Pi Setup
-1. `cd environments/raspberry-pi`
-2. `bash run.sh`
-3. After the containers start, seed data by executing the bundled JMeter plans (`migration.jmx`, `firme.jmx`).
-
-## QA Utilities
-- `bash environments/qa/run-auth.sh` — QA stack with Solr authentication enabled.
-- `bash environments/qa/run-no-auth.sh` — QA stack without Solr auth for public endpoints.
-- `bash environments/qa/solr-auth.sh` / `solr-curl-auth.sh` — quick helpers for logging into Solr or testing secured endpoints.
-
-## Container Builds
-Rebuild service images whenever you adjust a Dockerfile:
+## Rebuild images (when Dockerfiles change)
 ```
 docker build -t peviitor-solr containers/solr
 docker build -t peviitor-api containers/php-apache
 docker build -t peviitor-swagger containers/swagger-ui
 ```
-Push new image tags to your chosen registry before updating production environments.
 
-## Performance Testing
-- Store new JMeter result files and summaries under `tests/performance/`.
-- Recommended command: `jmeter -n -t environments/linux-auth/migration.jmx -l results.jtl`.
-- Remove large transient logs (`results.jtl`) before committing; keep curated PDFs or Markdown summaries only.
+## Config locations
+- API env: `~/peviitor/build/api/api.env` (Windows: `C:\peviitor\build\api\api.env`). Do not commit real credentials.
+- Zookeeper: `~/peviitor/config/zookeeper.env` plus `~/peviitor/zookeeper/{data,logs,certs}` placeholders.
 
-## API Configuration (`api.env`)
-Scripts create `peviitor/build/api`; add the file below with your environment-specific values:
-```
-LOCAL_SERVER=<local server>
-PROD_SERVER=<production server>
-SOLR_SERVER=172.18.0.10:8983
-SOLR_USER=<solr user>
-SOLR_PASS=<solr password>
-```
-Never commit real credentials. Share secrets through your preferred vault.
-
-## Zookeeper Upgrade Prep
-- Provisioners now scaffold `~/peviitor/config/zookeeper.env` plus `~/peviitor/zookeeper/{data,logs,certs}`. Update the generated file when the Zookeeper ensemble is available.
-- Set `ZK_ENABLED=true` and supply the full connect string (append your chroot if required). The installers auto-switch Solr into Cloud mode when the value is present; otherwise they default to standalone.
-- Place TLS materials in `~/peviitor/zookeeper/certs` and reference the filenames in `zookeeper.env`. Certificates remain local and mount read-only into the Solr container when secure mode is enabled.
-- After editing `zookeeper.env`, rerun the platform installer to reconfigure the stack. The remaining manual step is to ensure networking reachability to the Zookeeper servers.
-
-## Verify Your Environment
-After provisioning, confirm the services respond as expected:
-- `http://localhost:8983/` — Solr Admin UI
-- `http://localhost:8080/api/v0/random/` — API sample endpoint
-- `http://localhost:8080/` — Search front-end
-If anything fails, re-run the platform script and inspect its log output for missing prerequisites or credential issues.
+## Verify after install
+- Solr UI: http://localhost:8983/
+- API sample: http://localhost:8080/api/v0/random/
+- Front-end: http://localhost:8080/
+If something fails, rerun the installer for your platform; it re-checks prerequisites and rebuilds the stack.

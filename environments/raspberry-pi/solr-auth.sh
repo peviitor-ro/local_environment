@@ -8,6 +8,11 @@ else
     username=$USER
 fi
 
+SOLR_DATA_DIR="/home/$username/peviitor/solr/core/data"
+sudo mkdir -p "$SOLR_DATA_DIR"
+sudo chown -R 8983:8983 "$SOLR_DATA_DIR"
+sudo chmod -R 775 "$SOLR_DATA_DIR"
+
 CORE_NAME=auth
 CORE_NAME_2=jobs
 CORE_NAME_3=logo
@@ -18,13 +23,11 @@ SECURITY_FILE="security.json"
 
 # Start Solr container
 echo " --> starting Solr container...on port $SOLR_PORT"
-docker run --name $CONTAINER_NAME --network mynetwork --ip 172.168.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
+docker run --name $CONTAINER_NAME --network mynetwork --ip 172.18.0.10 --restart=always -d -p $SOLR_PORT:$SOLR_PORT \
     -v /home/$username/peviitor/solr/core/data:/var/solr/data solr:latest
 
 echo "Waiting for Solr to start..."
 sleep 10
-
-sudo chmod -R 777 /home/$username/peviitor
 
 # Create Solr cores
 echo " -->Creating Solr cores $CORE_NAME, $CORE_NAME_2,$CORE_NAME_4 and $CORE_NAME_3"
@@ -470,4 +473,3 @@ echo -e "\n\033[1;34m===========================================================
 echo -e "\033[1;34m                       Local environment\033[0m"
 echo -e "\033[1;34m                          peviitor.ro\033[0m"
 echo -e "\033[1;34m=================================================================\033[0m\n"
-

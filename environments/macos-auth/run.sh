@@ -16,9 +16,9 @@ brew install coreutils
 validate_password() {
   local password="$1"
 
-  # Check length >= 15
-  if [ ${#password} -ge 15 ]; then
-    return 0
+  # Require length >= 15 and all character classes
+  if [ ${#password} -lt 15 ]; then
+    return 1
   fi
 
   # Check for lowercase letter
@@ -54,7 +54,7 @@ while true; do
     echo "Password accepted."
     break
   else
-    echo "Password must be at least 15 characters long OR contain at least one lowercase letter, one uppercase letter, one digit, and one special character (!@#$%^&*_-[]()). Please try again."
+    echo "Password must be at least 15 characters and include lowercase, uppercase, digit, and special (!@#$%^&*_-[]()). Please try again."
   fi
 done
 
@@ -63,8 +63,6 @@ echo " ===================== use those credentials ====================="
 echo " ====================== for SOLR login ==========================="
 echo " ================================================================="
 echo "You entered user: $solr_user"
-# Note: Avoid echoing passwords in real use.
-echo "You entered password: $solr_password"
 
 if ! command -v git >/dev/null 2>&1; then
     echo "Git is not installed. Attempting to install Git..."
@@ -138,7 +136,14 @@ else
     username=$USER
 fi
 
-rm -rf /Users/$username/peviitor
+install_root="/Users/$username/peviitor"
+if [ -d "$install_root" ]; then
+    backup_dir="${install_root}_backup_$(date +%Y%m%d%H%M%S)"
+    echo "Existing $install_root detected; moving to $backup_dir instead of deleting."
+    mv "$install_root" "$backup_dir"
+fi
+mkdir -p "$install_root"
+chmod 755 "$install_root"
 
 echo "Remove existing containers if they exist"
 for container in apache-container solr-container data-migration deploy-fe
@@ -159,7 +164,7 @@ fi
 
 # Creează rețeaua nouă
 echo "Creating network $network..."
-docker network create --subnet=172.168.0.0/16 $network
+docker network create --subnet=172.18.0.0/16 $network
 
 echo " --> building FRONTEND container. this will take a while..."
 
@@ -186,7 +191,7 @@ echo "Download URL găsit: $DOWNLOAD_URL"
 
 # Creează folderul țintă dacă nu există
  mkdir -p "$TARGET_DIR"
- chmod -R u+rwx ~/peviitor
+ chmod -R 755 "$TARGET_DIR"
 
 ZK_CONFIG_TEMPLATE="$repo_root/config/zookeeper/zookeeper.env.example"
 ZK_CONFIG_DIR="/Users/$username/peviitor/config"
@@ -236,7 +241,7 @@ git clone --depth 1 --branch master --single-branch https://github.com/peviitor-
 
 echo " --> creating api.env file for API"
 cat > /Users/$username/peviitor/build/api/api.env <<EOF
-LOCAL_SERVER = 172.168.0.10:8983
+LOCAL_SERVER = 172.18.0.10:8983
 PROD_SERVER = zimbor.go.ro
 BACK_SERVER = https://api.laurentiumarian.ro/
 SOLR_USER = $solr_user
@@ -244,7 +249,7 @@ SOLR_PASS = $solr_password
 EOF
 
 echo " --> building APACHE WEB SERVER container for FRONTEND, API and SWAGGER-UI. this will take a while..."
-docker run --name apache-container --network mynetwork --ip 172.168.0.11  --restart=always -d -p 8081:80 \
+docker run --name apache-container --network mynetwork --ip 172.18.0.11  --restart=always -d -p 8081:80 \
     -v /Users/$username/peviitor/build:/var/www/html alexstefan1702/php-apache-arm
 
 # Modificarea URL-ului pentru swagger in containerul lui Alex Stefan
